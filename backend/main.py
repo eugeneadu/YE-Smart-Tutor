@@ -94,6 +94,39 @@ def generate_greeting(request: GreetingRequest):
         print(f"Error: {e}")
         return {"message": f"Hello {request.name}! Ready to learn?"}
 
+class ChatRequest(BaseModel):
+    message: str
+    context: str
+    student_grade: int
+
+@app.post("/api/chat")
+def chat_with_tutor(request: ChatRequest):
+    if not api_key:
+        return {"reply": "I'm sorry, I can't chat right now because my brain (API Key) is missing!"}
+
+    prompt = f"""You are a friendly, encouraging tutor named "Professor Hoot" helping a Grade {request.student_grade} student.
+    
+    Current Lesson Context:
+    {request.context}
+    
+    Student Question:
+    {request.message}
+    
+    Instructions:
+    1. Answer the question simply and clearly, using language appropriate for a Grade {request.student_grade} student.
+    2. Be encouraging and positive. Use emojis occasionally.
+    3. If the question is about the lesson, use the context provided.
+    4. If the question is off-topic, gently guide them back to learning.
+    5. Keep your answer concise (under 3 sentences unless a detailed explanation is needed).
+    """
+
+    try:
+        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
+        return {"reply": response.text}
+    except Exception as e:
+        print(f"Error in chat: {e}")
+        return {"reply": "Oops! I got a little confused. Can you ask that again?"}
+
 class LessonPlanRequest(BaseModel):
     subject: str
     topic: str
@@ -490,8 +523,11 @@ async def generate_speech(request: TTSRequest):
         # You can also try: en-US-AriaNeural, en-US-SaraNeural
         voice = "en-US-JennyNeural"
         
+        # Clean text for TTS (remove markdown asterisks)
+        clean_text = request.text.replace("*", "")
+        
         # Generate speech using Edge TTS
-        communicate = edge_tts.Communicate(request.text, voice)
+        communicate = edge_tts.Communicate(clean_text, voice)
         
         # Collect audio chunks
         audio_data = BytesIO()

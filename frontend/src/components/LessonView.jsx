@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import QuizView from './QuizView';
 import Modal from './Modal';
 import Flashcard from './Flashcard';
+import ChatAssistant from './ChatAssistant';
 
 const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', onBack, onBadgeUnlock }) => {
     const [topic, setTopic] = useState(initialTopic);
@@ -653,6 +654,13 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
             >
                 {modalConfig.content}
             </Modal>
+            {/* Chat Assistant */}
+            {mode === 'learning' && (
+                <ChatAssistant
+                    context={currentContent}
+                    studentGrade={grade}
+                />
+            )}
         </div>
     );
 };
