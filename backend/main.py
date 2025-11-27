@@ -784,6 +784,10 @@ def log_activity(student_id: int, db: Session = Depends(get_db)):
     # Check for streak-based badges
     check_and_award_badges(student_id, db)
     
+    return {
+        "current_streak": streak.current_streak,
+        "longest_streak": streak.longest_streak,
+        "freeze_available": streak.freeze_available
     }
 
 # ==================== LEADERBOARD ENDPOINTS ====================
