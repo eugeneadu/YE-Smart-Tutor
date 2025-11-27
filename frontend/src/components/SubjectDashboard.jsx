@@ -1,7 +1,8 @@
-
 import React from 'react';
+import BadgeDisplay from './BadgeDisplay';
+import StreakCounter from './StreakCounter';
 
-const SubjectDashboard = ({ onSelectSubject, recommendations = [] }) => {
+const SubjectDashboard = ({ onSelectSubject, recommendations = [], studentProfile }) => {
     const subjects = [
         { id: 'math', name: 'Mathematics', icon: '📐', color: 'bg-blue-100 hover:bg-blue-200 text-blue-600' },
         { id: 'english', name: 'English', icon: '📚', color: 'bg-green-100 hover:bg-green-200 text-green-600' },
@@ -12,6 +13,20 @@ const SubjectDashboard = ({ onSelectSubject, recommendations = [] }) => {
 
     return (
         <div className="space-y-12 animate-fade-in">
+            {/* Gamification Section */}
+            {studentProfile && (
+                <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <span>🏆</span>
+                            <span>Your Achievements</span>
+                        </h2>
+                        <StreakCounter studentId={studentProfile.id} />
+                    </div>
+                    <BadgeDisplay studentId={studentProfile.id} />
+                </div>
+            )}
+
             {recommendations.length > 0 && (
                 <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-8 border-red-400 p-8 rounded-2xl shadow-lg transform transition-all hover:scale-[1.01]">
                     <h3 className="text-2xl font-bold text-red-800 mb-6 flex items-center gap-3">

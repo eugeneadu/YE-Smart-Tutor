@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import QuizView from './QuizView';
 
-const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', onBack }) => {
+const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', onBack, onBadgeUnlock }) => {
     const [topic, setTopic] = useState(initialTopic);
     const [grade, setGrade] = useState(defaultGrade);
     const [mode, setMode] = useState('setup'); // 'setup', 'plan', 'learning', 'quiz'
@@ -77,7 +77,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         setMode('quiz');
     };
 
-    const handleQuizComplete = (score, total) => {
+    const handleQuizComplete = async (score, total) => {
         const percentage = score / total;
         if (percentage >= 0.6) {
             if (currentStep + 1 < lessonPlan.length) {
@@ -85,6 +85,32 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                 setCurrentStep(currentStep + 1);
                 fetchContent(currentStep + 1);
             } else {
+                // Lesson Completed!
+
+                // Log Activity
+                if (studentProfile && studentProfile.id) {
+                    try {
+                        await fetch(`http://localhost:8000/api/students/${studentProfile.id}/activity`, {
+                            method: 'POST'
+                        });
+
+                        // Check for Badges
+                        if (onBadgeUnlock) {
+                            const badgeRes = await fetch(`http://localhost:8000/api/students/${studentProfile.id}/check-badges`, {
+                                method: 'POST'
+                            });
+                            const badgeData = await badgeRes.json();
+                            if (badgeData.new_badges && badgeData.new_badges.length > 0) {
+                                badgeData.new_badges.forEach(badge => {
+                                    onBadgeUnlock(badge);
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error logging activity:", err);
+                    }
+                }
+
                 alert("Congratulations! You've completed the entire lesson!");
                 onBack();
             }

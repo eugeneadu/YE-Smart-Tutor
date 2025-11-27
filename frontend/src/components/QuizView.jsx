@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions = 5, onBack, onComplete }) => {
+const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions = 5, onBack, onComplete, onBadgeUnlock }) => {
     const [loading, setLoading] = useState(true);
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -141,6 +141,25 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
 
             } catch (err) {
                 console.error("Failed to save results/xp", err);
+            }
+
+            // Check for new badges
+            if (studentId && onBadgeUnlock) {
+                try {
+                    const badgeRes = await fetch(`http://localhost:8000/api/students/${studentId}/check-badges`, {
+                        method: 'POST'
+                    });
+                    const badgeData = await badgeRes.json();
+                    if (badgeData.new_badges && badgeData.new_badges.length > 0) {
+                        // Show unlock modal for each badge (sequentially or just the first one for now)
+                        // For simplicity, let's show the first one, or loop if we can handle multiple
+                        badgeData.new_badges.forEach(badge => {
+                            onBadgeUnlock(badge);
+                        });
+                    }
+                } catch (err) {
+                    console.error("Error checking badges:", err);
+                }
             }
 
             // If onComplete is provided (Lesson Mode), call it after a short delay or button press

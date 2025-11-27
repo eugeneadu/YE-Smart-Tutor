@@ -5,6 +5,7 @@ import LessonView from './components/LessonView'
 import QuizView from './components/QuizView'
 import AdminDashboard from './components/AdminDashboard'
 import TwiLearningModule from './components/TwiLearningModule'
+import BadgeUnlockModal from './components/BadgeUnlockModal'
 
 function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
@@ -12,6 +13,7 @@ function App() {
   const [currentTopic, setCurrentTopic] = useState('');
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'lesson', 'quiz', 'admin', 'twi'
   const [greeting, setGreeting] = useState('');
+  const [unlockedBadge, setUnlockedBadge] = useState(null);
 
   const getLevelTitle = (level) => {
     switch (level) {
@@ -234,6 +236,7 @@ function App() {
               </p>
             </div>
             <SubjectDashboard
+              studentProfile={currentProfile}
               onSelectSubject={handleSubjectSelect}
               recommendations={recommendations}
             />
@@ -248,6 +251,7 @@ function App() {
             initialTopic={currentTopic}
             onStartQuiz={handleStartQuiz}
             onBack={handleBackToDashboard}
+            onBadgeUnlock={(badge) => setUnlockedBadge(badge)}
           />
         )}
 
@@ -257,7 +261,9 @@ function App() {
             topic={currentTopic}
             grade={currentProfile.grade}
             studentName={currentProfile.name}
+            studentId={currentProfile.id}
             onBack={handleBackToLesson}
+            onBadgeUnlock={(badge) => setUnlockedBadge(badge)}
           />
         )}
 
@@ -269,6 +275,13 @@ function App() {
           <AdminDashboard onBack={() => { setCurrentProfile(null); setViewMode('dashboard'); }} />
         )}
       </main>
+
+      {unlockedBadge && (
+        <BadgeUnlockModal
+          badge={unlockedBadge}
+          onClose={() => setUnlockedBadge(null)}
+        />
+      )}
     </div>
   )
 }
