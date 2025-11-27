@@ -7,7 +7,9 @@ import AdminDashboard from './components/AdminDashboard'
 import TwiLearningModule from './components/TwiLearningModule'
 import BadgeUnlockModal from './components/BadgeUnlockModal'
 import FlashcardPractice from './components/FlashcardPractice'
+
 import QuizLibrary from './components/QuizLibrary'
+import LessonLibrary from './components/LessonLibrary'
 
 function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
@@ -16,6 +18,7 @@ function App() {
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'lesson', 'quiz', 'admin', 'twi', 'flashcards', 'quiz-library'
   const [greeting, setGreeting] = useState('');
   const [unlockedBadge, setUnlockedBadge] = useState(null);
+  const [quizConfig, setQuizConfig] = useState(null);
 
   const getLevelTitle = (level) => {
     switch (level) {
@@ -243,6 +246,7 @@ function App() {
               recommendations={recommendations}
               onStartFlashcards={() => setViewMode('flashcards')}
               onOpenQuizLibrary={() => setViewMode('quiz-library')}
+              onOpenLessonLibrary={() => setViewMode('lesson-library')}
             />
           </div>
         )}
@@ -266,6 +270,8 @@ function App() {
             grade={currentProfile.grade}
             studentName={currentProfile.name}
             studentId={currentProfile.id}
+            numQuestions={quizConfig?.numQuestions}
+            initialQuestions={quizConfig?.questions}
             onBack={handleBackToLesson}
             onBadgeUnlock={(badge) => setUnlockedBadge(badge)}
           />
@@ -290,11 +296,26 @@ function App() {
           <QuizLibrary
             studentId={currentProfile.id}
             onExit={handleBackToDashboard}
-            onRetakeQuiz={(subject, topic) => {
+            onRetakeQuiz={(subject, topic, questions = null) => {
               setCurrentSubject(subject);
               setCurrentTopic(topic);
+              // Store questions in state or pass directly if possible.
+              // Since we need to switch viewMode, we'll use a new state variable for quiz config
+              setQuizConfig({ questions });
               setViewMode('quiz');
             }}
+            onStartQuiz={(numQuestions) => {
+              setQuizConfig({ numQuestions });
+              setViewMode('quiz');
+            }}
+
+          />
+        )}
+
+        {viewMode === 'lesson-library' && (
+          <LessonLibrary
+            studentId={currentProfile.id}
+            onExit={handleBackToDashboard}
           />
         )}
       </main>
@@ -310,3 +331,4 @@ function App() {
 }
 
 export default App
+

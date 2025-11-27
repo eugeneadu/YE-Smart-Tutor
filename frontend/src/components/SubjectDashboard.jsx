@@ -3,7 +3,7 @@ import BadgeDisplay from './BadgeDisplay';
 import StreakCounter from './StreakCounter';
 import Leaderboard from './Leaderboard';
 
-const SubjectDashboard = ({ onSelectSubject, recommendations = [], studentProfile, onStartFlashcards, onOpenQuizLibrary }) => {
+const SubjectDashboard = ({ onSelectSubject, recommendations = [], studentProfile, onStartFlashcards, onOpenQuizLibrary, onOpenLessonLibrary }) => {
     const subjects = [
         { id: 'math', name: 'Mathematics', icon: '📐', color: 'bg-blue-100 hover:bg-blue-200 text-blue-600' },
         { id: 'english', name: 'English', icon: '📚', color: 'bg-green-100 hover:bg-green-200 text-green-600' },
@@ -90,6 +90,15 @@ const SubjectDashboard = ({ onSelectSubject, recommendations = [], studentProfil
                             >
                                 <span className="text-2xl">📝</span>
                                 <span>Quiz Library</span>
+                            </button>
+
+                            {/* Lesson Library Button */}
+                            <button
+                                onClick={onOpenLessonLibrary}
+                                className="w-full py-4 bg-white text-gray-700 border-2 border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-200 transform transition-all hover:-translate-y-1 font-bold text-lg flex items-center justify-center gap-3"
+                            >
+                                <span className="text-2xl">📚</span>
+                                <span>My Lessons</span>
                             </button>
 
                             {/* Leaderboard Section */}

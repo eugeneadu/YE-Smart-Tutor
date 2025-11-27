@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Date, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Date, ForeignKey, Float, JSON
 from database import Base
 import datetime
 
@@ -49,6 +49,16 @@ class LessonLog(Base):
     topic = Column(String)
     content = Column(String) # Storing full text
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+class SavedQuiz(Base):
+    __tablename__ = "saved_quizzes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"))
+    subject = Column(String)
+    topic = Column(String)
+    questions = Column(JSON) # Store list of questions
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Settings(Base):
     __tablename__ = "settings"

@@ -432,6 +432,67 @@ const AdminDashboard = ({ onBack }) => {
                     </div>
                 </div>
             )}
+
+            {/* Lesson History Section */}
+            <div className="bg-white rounded-3xl shadow-xl p-8 mb-12">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                    <span>📚</span> Lesson History
+                </h2>
+                <div className="space-y-4">
+                    {students.map(student => (
+                        <div key={student.id} className="border border-gray-100 rounded-2xl p-4">
+                            <h3 className="font-bold text-lg mb-2">{student.name}'s Recent Lessons</h3>
+                            <LessonHistoryList studentId={student.id} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const LessonHistoryList = ({ studentId }) => {
+    const [logs, setLogs] = useState([]);
+    const [expandedLogId, setExpandedLogId] = useState(null);
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                const res = await fetch(`http://localhost:8000/api/students/${studentId}/lesson-logs`);
+                const data = await res.json();
+                setLogs(data);
+            } catch (err) {
+                console.error("Error fetching logs:", err);
+            }
+        };
+        fetchLogs();
+    }, [studentId]);
+
+    if (logs.length === 0) return <div className="text-gray-400 text-sm italic">No lessons recorded yet.</div>;
+
+    return (
+        <div className="space-y-2">
+            {logs.map(log => (
+                <div key={log.id} className="bg-gray-50 rounded-xl p-4 transition-all">
+                    <div
+                        className="flex justify-between items-center cursor-pointer"
+                        onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                    >
+                        <div>
+                            <div className="font-bold text-gray-800">{log.topic}</div>
+                            <div className="text-xs text-gray-500">{log.subject} • {new Date(log.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div className="text-gray-400">{expandedLogId === log.id ? '▲' : '▼'}</div>
+                    </div>
+
+                    {expandedLogId === log.id && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600 prose max-w-none">
+                            {/* Simple markdown rendering or just text */}
+                            <div className="whitespace-pre-wrap">{log.content}</div>
+                        </div>
+                    )}
+                </div>
+            ))}
         </div>
     );
 };

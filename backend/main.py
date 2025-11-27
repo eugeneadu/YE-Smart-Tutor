@@ -963,3 +963,40 @@ def log_lesson(student_id: int, log: LessonLogCreate, db: Session = Depends(get_
 def get_lesson_logs(student_id: int, db: Session = Depends(get_db)):
     logs = db.query(models.LessonLog).filter(models.LessonLog.student_id == student_id).order_by(models.LessonLog.timestamp.desc()).all()
     return logs
+
+# ==================== SAVED QUIZ ENDPOINTS ====================
+
+class SavedQuizCreate(BaseModel):
+    student_id: int
+    subject: str
+    topic: str
+    questions: list
+
+@app.post("/api/saved-quizzes")
+def save_quiz(quiz: SavedQuizCreate, db: Session = Depends(get_db)):
+    db_quiz = models.SavedQuiz(
+        student_id=quiz.student_id,
+        subject=quiz.subject,
+        topic=quiz.topic,
+        questions=quiz.questions,
+        created_at=datetime.utcnow()
+    )
+    db.add(db_quiz)
+    db.commit()
+    db.refresh(db_quiz)
+    return db_quiz
+
+@app.get("/api/students/{student_id}/saved-quizzes")
+def get_saved_quizzes(student_id: int, db: Session = Depends(get_db)):
+    quizzes = db.query(models.SavedQuiz).filter(models.SavedQuiz.student_id == student_id).order_by(models.SavedQuiz.created_at.desc()).all()
+    return quizzes
+
+@app.delete("/api/saved-quizzes/{quiz_id}")
+def delete_saved_quiz(quiz_id: int, db: Session = Depends(get_db)):
+    quiz = db.query(models.SavedQuiz).filter(models.SavedQuiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    
+    db.delete(quiz)
+    db.commit()
+    return {"status": "success", "message": "Quiz deleted"}

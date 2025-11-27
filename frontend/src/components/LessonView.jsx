@@ -68,6 +68,23 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
             setCurrentContent(data.content);
             setCurrentImage(data.image_url || null);
             setMode('learning');
+
+            // Auto-save generated lesson
+            if (studentProfile && studentProfile.id) {
+                try {
+                    await fetch(`http://localhost:8000/api/students/${studentProfile.id}/lesson-log`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            subject: subject,
+                            topic: topic,
+                            content: data.content
+                        })
+                    });
+                } catch (err) {
+                    console.error("Error auto-saving lesson:", err);
+                }
+            }
         } catch (error) {
             console.error("Error fetching content:", error);
         } finally {
@@ -92,6 +109,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         const percentage = score / total;
         if (percentage >= 0.6) {
             if (currentStep + 1 < lessonPlan.length) {
+                setMode('learning'); // Switch back to learning mode to show Modal
                 setModalConfig({
                     isOpen: true,
                     title: 'Great Job! 🎉',

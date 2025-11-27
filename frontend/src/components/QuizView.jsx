@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 
-const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions = 5, onBack, onComplete, onBadgeUnlock }) => {
-    const [loading, setLoading] = useState(true);
-    const [questions, setQuestions] = useState([]);
+const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions = 5, onBack, onComplete, onBadgeUnlock, initialQuestions = null }) => {
+    const [loading, setLoading] = useState(!initialQuestions);
+    const [questions, setQuestions] = useState(initialQuestions || []);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [showResults, setShowResults] = useState(false);
@@ -11,6 +11,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [isAnswerChecked, setIsAnswerChecked] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const recognitionRef = React.useRef(null);
 
     useEffect(() => {
@@ -84,8 +85,10 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
             }
         };
 
-        fetchQuiz();
-    }, [subject, topic, grade, numQuestions]);
+        if (!initialQuestions) {
+            fetchQuiz();
+        }
+    }, [subject, topic, grade, numQuestions, initialQuestions]);
 
     const handleAnswerSelect = (option) => {
         if (isAnswerChecked) return;
@@ -106,8 +109,8 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
             setSelectedAnswer(null);
             setIsAnswerChecked(false);
         } else {
-            const finalScore = score + (selectedAnswer === questions[currentQuestionIndex].correct ? 1 : 0);
-            setScore(finalScore); // Update score state for display
+            const finalScore = score; // Score is already updated by handleCheckAnswer
+            // setScore(finalScore); // No need to update state again if it's already correct
             setShowResults(true);
 
             // Save results to DB
@@ -218,6 +221,36 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
                         >
                             Continue Lesson →
                         </button>
+                    )}
+                    {!isSaved && studentId && (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await fetch('http://localhost:8000/api/saved-quizzes', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            student_id: studentId,
+                                            subject: subject,
+                                            topic: topic,
+                                            questions: questions
+                                        })
+                                    });
+                                    setIsSaved(true);
+                                } catch (err) {
+                                    console.error("Error saving quiz:", err);
+                                    alert("Failed to save quiz");
+                                }
+                            }}
+                            className="px-8 py-4 bg-indigo-500 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-600 flex items-center gap-2"
+                        >
+                            <span>💾</span> Save Quiz
+                        </button>
+                    )}
+                    {isSaved && (
+                        <div className="px-8 py-4 bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center gap-2">
+                            <span>✅</span> Saved
+                        </div>
                     )}
                 </div>
             </div>
