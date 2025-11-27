@@ -9,7 +9,7 @@ const TwiLearningModule = ({ onBack }) => {
         if (!topic) return;
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8000/api/twi/vocab', {
+            const res = await fetch('/api/twi/vocab', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic })

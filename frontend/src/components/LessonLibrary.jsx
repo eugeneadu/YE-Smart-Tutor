@@ -9,7 +9,7 @@ const LessonLibrary = ({ studentId, onExit }) => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const res = await fetch(`http://localhost:8000/api/students/${studentId}/lesson-logs`);
+                const res = await fetch(`/api/students/${studentId}/lesson-logs`);
                 const data = await res.json();
                 setLogs(data);
             } catch (err) {

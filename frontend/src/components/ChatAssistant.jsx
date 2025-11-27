@@ -27,7 +27,7 @@ const ChatAssistant = ({ context, studentGrade }) => {
         setIsTyping(true);
 
         try {
-            const res = await fetch('http://localhost:8000/api/chat', {
+            const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -83,8 +83,8 @@ const ChatAssistant = ({ context, studentGrade }) => {
                             >
                                 <div
                                     className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user'
-                                            ? 'bg-indigo-500 text-white rounded-br-none'
-                                            : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-none'
+                                        ? 'bg-indigo-500 text-white rounded-br-none'
+                                        : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-none'
                                         }`}
                                 >
                                     <ReactMarkdown>{msg.text}</ReactMarkdown>

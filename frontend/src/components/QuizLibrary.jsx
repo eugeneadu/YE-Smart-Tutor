@@ -15,8 +15,8 @@ const QuizLibrary = ({ studentId, onExit, onRetakeQuiz }) => {
         setLoading(true);
         try {
             const [resultsRes, savedRes] = await Promise.all([
-                fetch(`http://localhost:8000/api/students/${studentId}/results`),
-                fetch(`http://localhost:8000/api/students/${studentId}/saved-quizzes`)
+                fetch(`/api/students/${studentId}/results`),
+                fetch(`/api/students/${studentId}/saved-quizzes`)
             ]);
 
             const resultsData = await resultsRes.json();
@@ -34,7 +34,7 @@ const QuizLibrary = ({ studentId, onExit, onRetakeQuiz }) => {
     const handleDeleteSavedQuiz = async (quizId) => {
         if (!window.confirm("Delete this saved quiz?")) return;
         try {
-            await fetch(`http://localhost:8000/api/saved-quizzes/${quizId}`, {
+            await fetch(`/api/saved-quizzes/${quizId}`, {
                 method: 'DELETE'
             });
             setSavedQuizzes(prev => prev.filter(q => q.id !== quizId));

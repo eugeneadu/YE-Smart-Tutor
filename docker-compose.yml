@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     build: ./frontend
@@ -7,6 +5,7 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -14,6 +13,11 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - backend_data:/app/data
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+volumes:
+  backend_data:

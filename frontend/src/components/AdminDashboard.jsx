@@ -11,13 +11,13 @@ const AdminDashboard = ({ onBack }) => {
     const handleAddStudent = async () => {
         if (!newStudentName) return;
         try {
-            await fetch('http://localhost:8000/api/students', {
+            await fetch('/api/students', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newStudentName, grade: newStudentGrade, avatar: '🎓' })
             });
             // Refresh list
-            const res = await fetch('http://localhost:8000/api/students');
+            const res = await fetch('/api/students');
             const data = await res.json();
             setStudents(data);
             setNewStudentName('');
@@ -32,7 +32,7 @@ const AdminDashboard = ({ onBack }) => {
             // Fetch Students
             try {
                 console.log("Fetching students...");
-                const res = await fetch('http://localhost:8000/api/students');
+                const res = await fetch('/api/students');
                 if (res.ok) {
                     const data = await res.json();
                     console.log("Students loaded:", data);
@@ -47,7 +47,7 @@ const AdminDashboard = ({ onBack }) => {
             // Fetch Results
             try {
                 console.log("Fetching results...");
-                const res = await fetch('http://localhost:8000/api/results');
+                const res = await fetch('/api/results');
                 if (res.ok) {
                     const data = await res.json();
                     console.log("Results loaded:", data);
@@ -70,7 +70,7 @@ const AdminDashboard = ({ onBack }) => {
 
     const handleChangePin = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/admin/change-pin', {
+            const res = await fetch('/api/admin/change-pin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ old_pin: oldPin, new_pin: newPin })
@@ -102,7 +102,7 @@ const AdminDashboard = ({ onBack }) => {
     const handleUpdateStudent = async () => {
         if (!editingStudent) return;
         try {
-            await fetch(`http://localhost:8000/api/students/${editingStudent.id}`, {
+            await fetch(`/api/students/${editingStudent.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -114,7 +114,7 @@ const AdminDashboard = ({ onBack }) => {
             });
 
             // Refresh list
-            const res = await fetch('http://localhost:8000/api/students');
+            const res = await fetch('/api/students');
             const data = await res.json();
             setStudents(data);
             setEditingStudent(null);
@@ -132,11 +132,11 @@ const AdminDashboard = ({ onBack }) => {
     const confirmDelete = async () => {
         if (!studentToDelete) return;
         try {
-            await fetch(`http://localhost:8000/api/students/${studentToDelete.id}`, {
+            await fetch(`/api/students/${studentToDelete.id}`, {
                 method: 'DELETE',
             });
             // Refresh list
-            const res = await fetch('http://localhost:8000/api/students');
+            const res = await fetch('/api/students');
             const data = await res.json();
             setStudents(data);
             setStudentToDelete(null);
@@ -458,7 +458,7 @@ const LessonHistoryList = ({ studentId }) => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const res = await fetch(`http://localhost:8000/api/students/${studentId}/lesson-logs`);
+                const res = await fetch(`/api/students/${studentId}/lesson-logs`);
                 const data = await res.json();
                 setLogs(data);
             } catch (err) {

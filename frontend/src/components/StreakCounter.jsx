@@ -13,7 +13,7 @@ const StreakCounter = ({ studentId }) => {
 
     const fetchStreak = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/students/${studentId}/streak`);
+            const res = await fetch(`/api/students/${studentId}/streak`);
             const data = await res.json();
             setStreak(data);
         } catch (error) {

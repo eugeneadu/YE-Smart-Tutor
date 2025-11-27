@@ -7,7 +7,7 @@ const ProfileSelection = ({ onSelectProfile }) => {
     React.useEffect(() => {
         const fetchStudents = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/students');
+                const res = await fetch('/api/students');
                 const data = await res.json();
                 if (data && data.length > 0) {
                     setProfiles(data);
@@ -32,7 +32,7 @@ const ProfileSelection = ({ onSelectProfile }) => {
 
     const handleSelect = async (profile) => {
         try {
-            const res = await fetch('http://localhost:8000/api/students', {
+            const res = await fetch('/api/students', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: profile.name, grade: profile.grade, avatar: profile.avatar })

@@ -69,7 +69,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/quiz', {
+                const res = await fetch('/api/quiz', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ subject, topic, grade, num_questions: numQuestions })
@@ -115,7 +115,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
 
             // Save results to DB
             try {
-                await fetch('http://localhost:8000/api/results', {
+                await fetch('/api/results', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -131,7 +131,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
                 // Award XP if studentId is present
                 if (studentId) {
                     const xpEarned = finalScore * 5; // 5 XP per correct answer
-                    const xpRes = await fetch('http://localhost:8000/api/students/xp', {
+                    const xpRes = await fetch('/api/students/xp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ student_id: studentId, xp_amount: xpEarned })
@@ -149,7 +149,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
             // Check for new badges
             if (studentId && onBadgeUnlock) {
                 try {
-                    const badgeRes = await fetch(`http://localhost:8000/api/students/${studentId}/check-badges`, {
+                    const badgeRes = await fetch(`/api/students/${studentId}/check-badges`, {
                         method: 'POST'
                     });
                     const badgeData = await badgeRes.json();
@@ -226,7 +226,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
                         <button
                             onClick={async () => {
                                 try {
-                                    await fetch('http://localhost:8000/api/saved-quizzes', {
+                                    await fetch('/api/saved-quizzes', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({

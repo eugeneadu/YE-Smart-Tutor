@@ -13,7 +13,7 @@ const BadgeDisplay = ({ studentId }) => {
 
     const fetchBadges = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/students/${studentId}/badges`);
+            const res = await fetch(`/api/students/${studentId}/badges`);
             const data = await res.json();
             setBadges(data);
         } catch (error) {

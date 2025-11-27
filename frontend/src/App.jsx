@@ -49,7 +49,7 @@ function App() {
 
     try {
       // Fetch Greeting
-      const res = await fetch('http://localhost:8000/api/greet', {
+      const res = await fetch('/api/greet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: profile.name, grade: profile.grade })
@@ -59,7 +59,7 @@ function App() {
 
       // Fetch Recommendations
       if (profile.id) {
-        const recRes = await fetch(`http://localhost:8000/api/review/recommendations/${profile.id}`);
+        const recRes = await fetch(`/api/review/recommendations/${profile.id}`);
         const recData = await recRes.json();
         setRecommendations(recData);
       }
@@ -105,7 +105,7 @@ function App() {
 
   const handleParentAccess = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/admin/verify-pin', {
+      const res = await fetch('/api/admin/verify-pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: parentPin })

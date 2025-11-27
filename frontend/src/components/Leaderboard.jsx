@@ -22,7 +22,7 @@ const Leaderboard = ({ currentStudentId, onPrivacyChange }) => {
 
     const fetchLeaderboard = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/leaderboard');
+            const res = await fetch('/api/leaderboard');
             const data = await res.json();
             setLeaders(data);
         } catch (error) {
@@ -37,7 +37,7 @@ const Leaderboard = ({ currentStudentId, onPrivacyChange }) => {
         setIsPublic(newStatus); // Optimistic update
 
         try {
-            await fetch(`http://localhost:8000/api/students/${currentStudentId}/privacy`, {
+            await fetch(`/api/students/${currentStudentId}/privacy`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ is_public: newStatus })

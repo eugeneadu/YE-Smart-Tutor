@@ -40,7 +40,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         if (!topic) return;
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8000/api/lesson/plan', {
+            const res = await fetch('/api/lesson/plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subject, topic, grade })
@@ -60,7 +60,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         setLoading(true);
         try {
             const subtopic = lessonPlan[stepIndex];
-            const res = await fetch('http://localhost:8000/api/lesson/content', {
+            const res = await fetch('/api/lesson/content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subject, topic, subtopic, grade })
@@ -73,7 +73,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
             // Auto-save generated lesson
             if (studentProfile && studentProfile.id) {
                 try {
-                    await fetch(`http://localhost:8000/api/students/${studentProfile.id}/lesson-log`, {
+                    await fetch(`/api/students/${studentProfile.id}/lesson-log`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -128,13 +128,13 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                 // Log Activity
                 if (studentProfile && studentProfile.id) {
                     try {
-                        await fetch(`http://localhost:8000/api/students/${studentProfile.id}/activity`, {
+                        await fetch(`/api/students/${studentProfile.id}/activity`, {
                             method: 'POST'
                         });
 
                         // Check for Badges
                         if (onBadgeUnlock) {
-                            const badgeRes = await fetch(`http://localhost:8000/api/students/${studentProfile.id}/check-badges`, {
+                            const badgeRes = await fetch(`/api/students/${studentProfile.id}/check-badges`, {
                                 method: 'POST'
                             });
                             const badgeData = await badgeRes.json();
@@ -150,7 +150,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
 
                     // Save Lesson Log
                     try {
-                        await fetch(`http://localhost:8000/api/students/${studentProfile.id}/lesson-log`, {
+                        await fetch(`/api/students/${studentProfile.id}/lesson-log`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -181,7 +181,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         if (!currentContent) return;
         setIsGeneratingFlashcards(true);
         try {
-            const genRes = await fetch('http://localhost:8000/api/flashcards/generate', {
+            const genRes = await fetch('/api/flashcards/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: currentContent, num_cards: numCardsToGenerate })
@@ -210,7 +210,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         if (!studentProfile || currentFlashcards.length === 0) return;
         try {
             for (const card of currentFlashcards) {
-                await fetch(`http://localhost:8000/api/students/${studentProfile.id}/flashcards`, {
+                await fetch(`/api/students/${studentProfile.id}/flashcards`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -237,7 +237,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
     const speakText = async (text) => {
         setIsGeneratingTTS(true);
         try {
-            const res = await fetch('http://localhost:8000/api/tts', {
+            const res = await fetch('/api/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

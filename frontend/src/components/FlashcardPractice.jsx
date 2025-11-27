@@ -19,7 +19,7 @@ const FlashcardPractice = ({ studentId, onExit }) => {
     const fetchAllCards = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:8000/api/students/${studentId}/flashcards`);
+            const res = await fetch(`/api/students/${studentId}/flashcards`);
             const data = await res.json();
             setAllCards(data);
         } catch (error) {
@@ -33,7 +33,7 @@ const FlashcardPractice = ({ studentId, onExit }) => {
         if (!window.confirm("Are you sure you want to delete this flashcard?")) return;
 
         try {
-            await fetch(`http://localhost:8000/api/flashcards/${cardId}`, {
+            await fetch(`/api/flashcards/${cardId}`, {
                 method: 'DELETE'
             });
             setAllCards(prev => prev.filter(c => c.id !== cardId));
@@ -70,7 +70,7 @@ const FlashcardPractice = ({ studentId, onExit }) => {
     const handleRate = async (rating) => {
         const currentCard = practiceCards[currentIndex];
         try {
-            await fetch(`http://localhost:8000/api/flashcards/${currentCard.id}/review`, {
+            await fetch(`/api/flashcards/${currentCard.id}/review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rating })
