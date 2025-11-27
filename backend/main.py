@@ -381,6 +381,7 @@ class PinUpdate(BaseModel):
 @app.post("/api/admin/verify-pin")
 def verify_pin(pin_data: dict, db: Session = Depends(get_db)):
     pin = pin_data.get("pin")
+    print(f"Verifying PIN: {pin}")
     setting = db.query(models.Settings).filter(models.Settings.key == "parent_pin").first()
     
     # Default to 1234 if not set (though migration should have set it)
@@ -506,6 +507,19 @@ async def generate_speech(request: TTSRequest):
         error_msg = str(e)
         print(f"Error generating speech: {error_msg}")
         raise HTTPException(status_code=500, detail=f"Failed to generate speech: {error_msg}")
+
+# ==================== GAMIFICATION ENDPOINTS ====================
+
+from datetime import date, datetime, timedelta
+
+# Badge endpoints
+
+@app.get("/api/badges")
+def get_all_badges(db: Session = Depends(get_db)):
+    """Get all available badges"""
+    badges = db.query(models.Badge).all()
+    return [
+        {
             "id": b.id,
             "name": b.name,
             "description": b.description,
