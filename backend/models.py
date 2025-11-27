@@ -11,6 +11,7 @@ class Student(Base):
     avatar = Column(String, default="🎓")
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
+    is_public_profile = Column(Boolean, default=False)
 
 class TestResult(Base):
     __tablename__ = "test_results"

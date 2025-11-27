@@ -342,6 +342,7 @@ class StudentUpdate(BaseModel):
     name: str
     grade: int
     avatar: str
+    is_public: bool = False
 
 @app.put("/api/students/{student_id}")
 def update_student(student_id: int, student: StudentUpdate, db: Session = Depends(get_db)):
@@ -352,6 +353,7 @@ def update_student(student_id: int, student: StudentUpdate, db: Session = Depend
     db_student.name = student.name
     db_student.grade = student.grade
     db_student.avatar = student.avatar
+    db_student.is_public_profile = student.is_public
     
     db.commit()
     db.refresh(db_student)
@@ -782,8 +784,41 @@ def log_activity(student_id: int, db: Session = Depends(get_db)):
     # Check for streak-based badges
     check_and_award_badges(student_id, db)
     
-    return {
-        "current_streak": streak.current_streak,
-        "longest_streak": streak.longest_streak,
-        "freeze_available": streak.freeze_available
     }
+
+# ==================== LEADERBOARD ENDPOINTS ====================
+
+@app.get("/api/leaderboard")
+def get_leaderboard(period: str = "all_time", limit: int = 10, db: Session = Depends(get_db)):
+    """Get leaderboard rankings"""
+    # For now, we only track all-time XP. 
+    # Future: Implement weekly XP tracking in a separate table or reset logic.
+    
+    students = db.query(models.Student).order_by(models.Student.xp.desc()).limit(limit).all()
+    
+    leaderboard = []
+    for rank, student in enumerate(students, 1):
+        display_name = student.name if student.is_public_profile else f"Student #{student.id}"
+        leaderboard.append({
+            "rank": rank,
+            "id": student.id,
+            "name": display_name,
+            "xp": student.xp,
+            "level": student.level,
+            "avatar": student.avatar if student.is_public_profile else "👤",
+            "is_public": student.is_public_profile
+        })
+        
+    return leaderboard
+
+@app.put("/api/students/{student_id}/privacy")
+def update_privacy(student_id: int, privacy_data: dict, db: Session = Depends(get_db)):
+    """Update student privacy setting"""
+    is_public = privacy_data.get("is_public", False)
+    student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    student.is_public_profile = is_public
+    db.commit()
+    return {"status": "success", "is_public_profile": is_public}

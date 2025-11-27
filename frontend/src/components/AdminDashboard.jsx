@@ -108,7 +108,8 @@ const AdminDashboard = ({ onBack }) => {
                 body: JSON.stringify({
                     name: editingStudent.name,
                     grade: editingStudent.grade,
-                    avatar: editingStudent.avatar
+                    avatar: editingStudent.avatar,
+                    is_public: editingStudent.is_public_profile
                 })
             });
 
@@ -315,17 +316,30 @@ const AdminDashboard = ({ onBack }) => {
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-600 mb-1">Avatar</label>
-                                <div className="flex gap-2">
-                                    {['👧', '🧒', '🎓', '🚀', '⭐', '🐱', '🐶'].map(emoji => (
+                                <div className="grid grid-cols-5 gap-2">
+                                    {['🎓', '🚀', '⭐', '🦁', '🦄', '🤖', '🌍', '🎨', '⚽', '🎵'].map(emoji => (
                                         <button
                                             key={emoji}
                                             onClick={() => setEditingStudent({ ...editingStudent, avatar: emoji })}
-                                            className={`text-2xl p-2 rounded-lg border ${editingStudent.avatar === emoji ? 'bg-blue-100 border-blue-500' : 'border-transparent hover:bg-gray-100'}`}
+                                            className={`text-2xl p-2 rounded-lg border ${editingStudent.avatar === emoji ? 'bg-blue-100 border-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}
                                         >
                                             {emoji}
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                                <input
+                                    type="checkbox"
+                                    id="publicProfile"
+                                    checked={editingStudent.is_public_profile || false}
+                                    onChange={(e) => setEditingStudent({ ...editingStudent, is_public_profile: e.target.checked })}
+                                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor="publicProfile" className="text-sm text-gray-700 font-medium cursor-pointer select-none">
+                                    Show on Public Leaderboard 🏆
+                                </label>
                             </div>
                         </div>
 
