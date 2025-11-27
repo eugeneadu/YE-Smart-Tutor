@@ -1,0 +1,7 @@
+fastapython-dotenv
+uvicorn
+google-genai
+fastapi
+sqlalchemy
+elevenlabs
+edge-tts
