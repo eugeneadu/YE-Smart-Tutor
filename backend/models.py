@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Date, ForeignKey
 from database import Base
 import datetime
 
@@ -30,3 +30,35 @@ class Settings(Base):
     
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
+
+# Gamification Models
+
+class Badge(Base):
+    __tablename__ = "badges"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(String, nullable=False)
+    icon = Column(String, nullable=False)  # emoji
+    criteria_type = Column(String, nullable=False)  # "lesson_count", "perfect_scores", "streak", etc.
+    criteria_value = Column(Integer, nullable=False)
+    tier = Column(String, default="bronze")  # bronze, silver, gold, platinum
+
+class StudentBadge(Base):
+    __tablename__ = "student_badges"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    badge_id = Column(Integer, ForeignKey("badges.id"), nullable=False)
+    earned_at = Column(DateTime, default=datetime.datetime.utcnow)
+    is_new = Column(Boolean, default=True)  # For "NEW!" indicator
+
+class StudentStreak(Base):
+    __tablename__ = "student_streaks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), unique=True, nullable=False)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    last_activity_date = Column(Date)
+    freeze_available = Column(Boolean, default=False)
