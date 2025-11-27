@@ -1,0 +1,136 @@
+.streak-counter-container {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.streak-counter {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 2px solid #fed7aa;
+    border-radius: 2rem;
+    box-shadow: 0 2px 8px rgba(251, 146, 60, 0.1);
+    transition: all 0.3s ease;
+}
+
+.streak-counter.active {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-color: #fbbf24;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.flame-icon {
+    font-size: 2rem;
+    filter: grayscale(100%);
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.flame-icon.burning {
+    filter: grayscale(0%);
+    opacity: 1;
+    animation: flicker 2s infinite;
+}
+
+@keyframes flicker {
+
+    0%,
+    100% {
+        transform: scale(1);
+        filter: hue-rotate(0deg);
+    }
+
+    25% {
+        transform: scale(1.1) rotate(-5deg);
+    }
+
+    50% {
+        transform: scale(0.95) rotate(5deg);
+        filter: hue-rotate(10deg);
+    }
+
+    75% {
+        transform: scale(1.05) rotate(-3deg);
+    }
+}
+
+.streak-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.streak-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ea580c;
+    line-height: 1;
+}
+
+.streak-label {
+    font-size: 0.75rem;
+    color: #9a3412;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.streak-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-center;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.milestone-icon {
+    font-size: 1rem;
+}
+
+.streak-tooltip {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #78350f;
+    background: rgba(254, 243, 199, 0.8);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .streak-counter {
+        padding: 0.5rem 1rem;
+        gap: 0.5rem;
+    }
+
+    .flame-icon {
+        font-size: 1.5rem;
+    }
+
+    .streak-number {
+        font-size: 1.25rem;
+    }
+}
