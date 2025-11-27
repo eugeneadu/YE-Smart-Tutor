@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -826,3 +827,139 @@ def update_privacy(student_id: int, privacy_data: dict, db: Session = Depends(ge
     student.is_public_profile = is_public
     db.commit()
     return {"status": "success", "is_public_profile": is_public}
+
+# ==================== FLASHCARD ENDPOINTS ====================
+
+class FlashcardGenerateRequest(BaseModel):
+    text: str
+    num_cards: int = 5
+
+@app.post("/api/flashcards/generate")
+def generate_flashcards(request: FlashcardGenerateRequest):
+    if not api_key:
+        return {"flashcards": []}
+
+    prompt = f"""
+    Create {request.num_cards} flashcards from the following text.
+    Return a JSON object with a key 'flashcards' containing a list of objects.
+    Each object must have 'front' (question) and 'back' (answer).
+    Keep questions concise and answers clear.
+    
+    Text: {request.text[:2000]}
+    """
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type='application/json')
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"Error generating flashcards: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class FlashcardCreateRequest(BaseModel):
+    student_id: int
+    topic: str
+    front: str
+    back: str
+
+@app.post("/api/students/{student_id}/flashcards")
+def create_flashcard(student_id: int, card: FlashcardCreateRequest, db: Session = Depends(get_db)):
+    db_card = models.Flashcard(
+        student_id=student_id,
+        topic=card.topic,
+        front=card.front,
+        back=card.back,
+        next_review=datetime.utcnow()
+    )
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+@app.get("/api/students/{student_id}/flashcards/due")
+def get_due_flashcards(student_id: int, db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    cards = db.query(models.Flashcard).filter(
+        models.Flashcard.student_id == student_id,
+        models.Flashcard.next_review <= now
+    ).all()
+    return cards
+
+class FlashcardReviewRequest(BaseModel):
+    rating: str # "easy", "medium", "hard"
+
+@app.post("/api/flashcards/{card_id}/review")
+def review_flashcard(card_id: int, review: FlashcardReviewRequest, db: Session = Depends(get_db)):
+    card = db.query(models.Flashcard).filter(models.Flashcard.id == card_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    
+    # Simple SM-2 inspired logic
+    if review.rating == "easy":
+        card.interval = max(1, card.interval * 2) if card.interval > 0 else 1
+        card.ease_factor += 0.1
+    elif review.rating == "medium":
+        card.interval = max(1, int(card.interval * 1.5)) if card.interval > 0 else 1
+    else: # hard
+        card.interval = 0
+        card.ease_factor = max(1.3, card.ease_factor - 0.2)
+    
+    # Update review count and next review date
+    card.review_count += 1
+    if card.interval == 0:
+        # Review again in 10 minutes (effectively now for this simple app)
+        card.next_review = datetime.utcnow()
+    else:
+        card.next_review = datetime.utcnow() + timedelta(days=card.interval)
+        
+    db.commit()
+    return {"status": "success", "next_review": card.next_review, "interval": card.interval}
+
+@app.get("/api/students/{student_id}/flashcards")
+def get_all_flashcards(student_id: int, db: Session = Depends(get_db)):
+    cards = db.query(models.Flashcard).filter(models.Flashcard.student_id == student_id).all()
+    return cards
+
+@app.delete("/api/flashcards/{card_id}")
+def delete_flashcard(card_id: int, db: Session = Depends(get_db)):
+    card = db.query(models.Flashcard).filter(models.Flashcard.id == card_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    
+    db.delete(card)
+    db.commit()
+    return {"status": "success", "message": "Flashcard deleted"}
+
+@app.get("/api/students/{student_id}/results")
+def get_student_results(student_id: int, db: Session = Depends(get_db)):
+    results = db.query(models.TestResult).filter(models.TestResult.student_id == student_id).order_by(models.TestResult.timestamp.desc()).all()
+    return results
+
+# ==================== LESSON LOG ENDPOINTS ====================
+
+class LessonLogCreate(BaseModel):
+    subject: str
+    topic: str
+    content: str
+
+@app.post("/api/students/{student_id}/lesson-log")
+def log_lesson(student_id: int, log: LessonLogCreate, db: Session = Depends(get_db)):
+    db_log = models.LessonLog(
+        student_id=student_id,
+        subject=log.subject,
+        topic=log.topic,
+        content=log.content,
+        timestamp=datetime.utcnow()
+    )
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log
+
+@app.get("/api/students/{student_id}/lesson-logs")
+def get_lesson_logs(student_id: int, db: Session = Depends(get_db)):
+    logs = db.query(models.LessonLog).filter(models.LessonLog.student_id == student_id).order_by(models.LessonLog.timestamp.desc()).all()
+    return logs

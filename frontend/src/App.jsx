@@ -6,12 +6,14 @@ import QuizView from './components/QuizView'
 import AdminDashboard from './components/AdminDashboard'
 import TwiLearningModule from './components/TwiLearningModule'
 import BadgeUnlockModal from './components/BadgeUnlockModal'
+import FlashcardPractice from './components/FlashcardPractice'
+import QuizLibrary from './components/QuizLibrary'
 
 function App() {
   const [currentProfile, setCurrentProfile] = useState(null);
   const [currentSubject, setCurrentSubject] = useState(null);
   const [currentTopic, setCurrentTopic] = useState('');
-  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'lesson', 'quiz', 'admin', 'twi'
+  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'lesson', 'quiz', 'admin', 'twi', 'flashcards', 'quiz-library'
   const [greeting, setGreeting] = useState('');
   const [unlockedBadge, setUnlockedBadge] = useState(null);
 
@@ -239,6 +241,8 @@ function App() {
               studentProfile={currentProfile}
               onSelectSubject={handleSubjectSelect}
               recommendations={recommendations}
+              onStartFlashcards={() => setViewMode('flashcards')}
+              onOpenQuizLibrary={() => setViewMode('quiz-library')}
             />
           </div>
         )}
@@ -273,6 +277,25 @@ function App() {
 
         {viewMode === 'admin' && (
           <AdminDashboard onBack={() => { setCurrentProfile(null); setViewMode('dashboard'); }} />
+        )}
+
+        {viewMode === 'flashcards' && (
+          <FlashcardPractice
+            studentId={currentProfile.id}
+            onExit={handleBackToDashboard}
+          />
+        )}
+
+        {viewMode === 'quiz-library' && (
+          <QuizLibrary
+            studentId={currentProfile.id}
+            onExit={handleBackToDashboard}
+            onRetakeQuiz={(subject, topic) => {
+              setCurrentSubject(subject);
+              setCurrentTopic(topic);
+              setViewMode('quiz');
+            }}
+          />
         )}
       </main>
 

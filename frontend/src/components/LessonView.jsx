@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import QuizView from './QuizView';
+import Modal from './Modal';
+import Flashcard from './Flashcard';
 
 const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', onBack, onBadgeUnlock }) => {
     const [topic, setTopic] = useState(initialTopic);
@@ -14,7 +16,16 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
     const [quizConfig, setQuizConfig] = useState(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
+
     const [ttsAudioUrl, setTtsAudioUrl] = useState(null);
+    const [lessonComplete, setLessonComplete] = useState(false);
+    const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+    const [flashcardsGenerated, setFlashcardsGenerated] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', content: '', type: 'info' });
+    const [currentFlashcards, setCurrentFlashcards] = useState([]);
+    const [showFlashcards, setShowFlashcards] = useState(false);
+    const [flippedCards, setFlippedCards] = useState({});
+    const [numCardsToGenerate, setNumCardsToGenerate] = useState(3);
 
     useEffect(() => {
         // Cleanup speech on unmount
@@ -81,9 +92,17 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         const percentage = score / total;
         if (percentage >= 0.6) {
             if (currentStep + 1 < lessonPlan.length) {
-                alert("Great job! Moving to the next section.");
-                setCurrentStep(currentStep + 1);
-                fetchContent(currentStep + 1);
+                setModalConfig({
+                    isOpen: true,
+                    title: 'Great Job! 🎉',
+                    content: 'You passed the quiz! Moving to the next section.',
+                    type: 'success',
+                    onClose: () => {
+                        setModalConfig(prev => ({ ...prev, isOpen: false }));
+                        setCurrentStep(prev => prev + 1);
+                        fetchContent(currentStep + 1);
+                    }
+                });
             } else {
                 // Lesson Completed!
 
@@ -109,14 +128,90 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                     } catch (err) {
                         console.error("Error logging activity:", err);
                     }
-                }
 
-                alert("Congratulations! You've completed the entire lesson!");
-                onBack();
+                    // Save Lesson Log
+                    try {
+                        await fetch(`http://localhost:8000/api/students/${studentProfile.id}/lesson-log`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                subject: subject,
+                                topic: topic,
+                                content: currentContent
+                            })
+                        });
+                    } catch (err) {
+                        console.error("Error logging lesson:", err);
+                    }
+                }
+                setLessonComplete(true);
             }
         } else {
-            alert("Let's try reviewing this section again.");
+            setModalConfig({
+                isOpen: true,
+                title: 'Keep Trying! 💪',
+                content: 'You need 60% to pass. Review the material and try again.',
+                type: 'warning',
+                onClose: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+            });
             setMode('learning');
+        }
+    };
+
+    const handleGenerateFlashcards = async () => {
+        if (!currentContent) return;
+        setIsGeneratingFlashcards(true);
+        try {
+            const genRes = await fetch('http://localhost:8000/api/flashcards/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: currentContent, num_cards: numCardsToGenerate })
+            });
+            const genData = await genRes.json();
+            if (genData.flashcards) {
+                setCurrentFlashcards(genData.flashcards);
+                setFlippedCards({}); // Reset flips
+                setShowFlashcards(true);
+            }
+        } catch (error) {
+            console.error("Error generating flashcards:", error);
+            setModalConfig({
+                isOpen: true,
+                title: 'Error',
+                content: 'Failed to generate flashcards. Please try again.',
+                type: 'error',
+                onClose: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+            });
+        } finally {
+            setIsGeneratingFlashcards(false);
+        }
+    };
+
+    const handleSaveFlashcards = async () => {
+        if (!studentProfile || currentFlashcards.length === 0) return;
+        try {
+            for (const card of currentFlashcards) {
+                await fetch(`http://localhost:8000/api/students/${studentProfile.id}/flashcards`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        student_id: studentProfile.id,
+                        topic: topic,
+                        front: card.front,
+                        back: card.back
+                    })
+                });
+            }
+            setFlashcardsGenerated(true);
+            setModalConfig({
+                isOpen: true,
+                title: 'Saved! 💾',
+                content: 'Flashcards saved to your profile.',
+                type: 'success',
+                onClose: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+            });
+        } catch (error) {
+            console.error("Error saving flashcards:", error);
         }
     };
 
@@ -301,6 +396,55 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
         );
     }
 
+    if (lessonComplete) {
+        return (
+            <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-2xl w-full text-center space-y-8 animate-fade-in">
+                    <div className="text-8xl animate-bounce">🎉</div>
+                    <h2 className="text-4xl font-bold text-gray-800">Lesson Completed!</h2>
+                    <p className="text-xl text-gray-600">You've mastered <span className="font-bold text-blue-600">{topic}</span> and earned XP!</p>
+
+                    <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h3 className="font-bold text-blue-800 mb-2">Want to remember this forever?</h3>
+                        <p className="text-blue-600 mb-6">Create AI-powered flashcards to practice later.</p>
+
+                        {!flashcardsGenerated ? (
+                            <button
+                                onClick={handleGenerateFlashcards}
+                                disabled={isGeneratingFlashcards}
+                                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform transition-all hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGeneratingFlashcards ? (
+                                    <>
+                                        <span className="animate-spin">⏳</span>
+                                        <span>Generating Magic Cards...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>✨</span>
+                                        <span>Create Flashcards</span>
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <div className="bg-green-100 text-green-700 p-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                                <span>✅</span>
+                                <span>Flashcards Created Successfully!</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={onBack}
+                        className="text-gray-500 hover:text-gray-700 font-bold"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     // --- LEARNING MODE ---
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-12">
@@ -347,6 +491,34 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                                     <span className="text-3xl">⏹️</span>
                                 </button>
                             )}
+
+                            {/* Flashcard Toggle */}
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="bg-white/90 backdrop-blur rounded-lg px-2 py-1 shadow-sm border border-gray-100">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block text-center">Count</label>
+                                    <select
+                                        value={numCardsToGenerate}
+                                        onChange={(e) => setNumCardsToGenerate(parseInt(e.target.value))}
+                                        className="bg-transparent text-sm font-bold text-gray-800 focus:outline-none text-center w-full"
+                                        disabled={isGeneratingFlashcards}
+                                    >
+                                        <option value={3}>3</option>
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                    </select>
+                                </div>
+                                <button
+                                    onClick={handleGenerateFlashcards}
+                                    disabled={isGeneratingFlashcards}
+                                    className="group p-4 bg-white rounded-full shadow-lg border border-yellow-100 hover:bg-yellow-50 hover:scale-110 transition-all w-16 h-16 flex items-center justify-center relative"
+                                    title="Generate Flashcards"
+                                >
+                                    <span className="text-3xl">{isGeneratingFlashcards ? '⏳' : '⚡'}</span>
+                                    <span className="absolute right-full mr-3 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        Create Flashcards
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -384,9 +556,43 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                         className="px-10 py-5 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 text-xl"
                     >
                         <span>Take Quiz to Unlock Next</span>
+
                         <span className="text-2xl">🔐</span>
                     </button>
                 </div>
+
+                {/* Embedded Flashcards Section */}
+                {showFlashcards && (
+                    <div className="bg-indigo-50 p-8 border-t border-indigo-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-indigo-800">⚡ Quick Flashcards</h3>
+                            {!flashcardsGenerated ? (
+                                <button
+                                    onClick={handleSaveFlashcards}
+                                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+                                >
+                                    Save to Profile
+                                </button>
+                            ) : (
+                                <span className="text-green-600 font-bold flex items-center gap-2">
+                                    <span>✅</span> Saved
+                                </span>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {currentFlashcards.map((card, idx) => (
+                                <div key={idx} className="transform scale-75 origin-top-left">
+                                    <Flashcard
+                                        front={card.front}
+                                        back={card.back}
+                                        isFlipped={!!flippedCards[idx]}
+                                        onFlip={() => setFlippedCards(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
 
                 {/* TTS Audio Player */}
@@ -417,6 +623,18 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                     </div>
                 )}
             </div>
+            <Modal
+                isOpen={modalConfig.isOpen}
+                onClose={modalConfig.onClose}
+                title={modalConfig.title}
+                actions={
+                    <button onClick={modalConfig.onClose} className="btn-modal btn-primary">
+                        OK
+                    </button>
+                }
+            >
+                {modalConfig.content}
+            </Modal>
         </div>
     );
 };

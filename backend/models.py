@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Date, ForeignKey
+
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Date, ForeignKey, Float
 from database import Base
 import datetime
 
@@ -13,6 +14,19 @@ class Student(Base):
     level = Column(Integer, default=1)
     is_public_profile = Column(Boolean, default=False)
 
+class Flashcard(Base):
+    __tablename__ = "flashcards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"))
+    topic = Column(String)
+    front = Column(String)  # Question
+    back = Column(String)   # Answer
+    ease_factor = Column(Float, default=2.5)
+    interval = Column(Integer, default=0)  # Days
+    next_review = Column(DateTime, default=datetime.datetime.utcnow)
+    review_count = Column(Integer, default=0)
+
 class TestResult(Base):
     __tablename__ = "test_results"
 
@@ -24,6 +38,16 @@ class TestResult(Base):
     topic = Column(String)
     score = Column(Integer)
     total_questions = Column(Integer)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+class LessonLog(Base):
+    __tablename__ = "lesson_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"))
+    subject = Column(String)
+    topic = Column(String)
+    content = Column(String) # Storing full text
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Settings(Base):
