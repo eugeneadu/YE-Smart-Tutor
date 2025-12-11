@@ -440,10 +440,7 @@ const AdminDashboard = ({ onBack }) => {
                 </h2>
                 <div className="space-y-4">
                     {students.map(student => (
-                        <div key={student.id} className="border border-gray-100 rounded-2xl p-4">
-                            <h3 className="font-bold text-lg mb-2">{student.name}'s Recent Lessons</h3>
-                            <LessonHistoryList studentId={student.id} />
-                        </div>
+                        <StudentLessonHistory key={student.id} student={student} />
                     ))}
                 </div>
             </div>
@@ -451,24 +448,69 @@ const AdminDashboard = ({ onBack }) => {
     );
 };
 
-const LessonHistoryList = ({ studentId }) => {
+const StudentLessonHistory = ({ student }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
     const [logs, setLogs] = useState([]);
-    const [expandedLogId, setExpandedLogId] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const res = await fetch(`/api/students/${studentId}/lesson-logs`);
-                const data = await res.json();
-                setLogs(data);
-            } catch (err) {
-                console.error("Error fetching logs:", err);
-            }
-        };
-        fetchLogs();
-    }, [studentId]);
+        if (isExpanded && logs.length === 0) {
+            fetchLogs();
+        }
+    }, [isExpanded]);
 
-    if (logs.length === 0) return <div className="text-gray-400 text-sm italic">No lessons recorded yet.</div>;
+    const fetchLogs = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/students/${student.id}/lesson-logs`);
+            const data = await res.json();
+            setLogs(data);
+        } catch (err) {
+            console.error("Error fetching logs:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="border border-gray-100 rounded-2xl overflow-hidden">
+            <div
+                className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 cursor-pointer hover:from-blue-100 hover:to-purple-100 transition-all"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">{student.avatar}</span>
+                        <h3 className="font-bold text-lg text-gray-800">{student.name}'s Lessons</h3>
+                        {logs.length > 0 && (
+                            <span className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+                                {logs.length}
+                            </span>
+                        )}
+                    </div>
+                    <div className="text-gray-400 text-xl">
+                        {isExpanded ? '▲' : '▼'}
+                    </div>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="p-4 bg-gray-50">
+                    {loading ? (
+                        <div className="text-center text-gray-400 py-4">Loading lessons...</div>
+                    ) : logs.length === 0 ? (
+                        <div className="text-gray-400 text-sm italic text-center py-4">No lessons recorded yet.</div>
+                    ) : (
+                        <LessonHistoryList logs={logs} />
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const LessonHistoryList = ({ logs }) => {
+    const [expandedLogId, setExpandedLogId] = useState(null);
 
     return (
         <div className="space-y-2">

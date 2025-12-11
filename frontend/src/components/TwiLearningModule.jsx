@@ -5,21 +5,57 @@ const TwiLearningModule = ({ onBack }) => {
     const [vocabList, setVocabList] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // Translation State
+    const [textToTranslate, setTextToTranslate] = useState('');
+    const [translationResult, setTranslationResult] = useState(null);
+    const [translating, setTranslating] = useState(false);
+    const [error, setError] = useState(null);
+
     const handleGenerateVocab = async () => {
         if (!topic) return;
         setLoading(true);
+        setError(null);
         try {
             const res = await fetch('/api/twi/vocab', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic })
             });
+            if (!res.ok) throw new Error('Failed to generate vocabulary');
             const data = await res.json();
             setVocabList(data.vocab || []);
         } catch (error) {
             console.error("Error fetching Twi vocab:", error);
+            setError("Sorry, I couldn't generate words right now. Please try again.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleTranslate = async () => {
+        if (!textToTranslate) return;
+        setTranslating(true);
+        setTranslationResult(null);
+        setError(null);
+        try {
+            const res = await fetch('/api/twi/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textToTranslate })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Translation failed');
+            }
+
+            const data = await res.json();
+            setTranslationResult(data);
+        } catch (error) {
+            console.error("Error translating:", error);
+            setError("Sorry, translation failed. The AI might be busy. Please try again in a moment.");
+        } finally {
+            setTranslating(false);
         }
     };
 
@@ -43,7 +79,7 @@ const TwiLearningModule = ({ onBack }) => {
                 <button onClick={onBack} className="text-gray-500 hover:text-gray-700">← Back</button>
             </div>
 
-            <div className="mb-8 text-center">
+            <div className="mb-12 text-center border-b-2 border-yellow-100 pb-8">
                 <p className="text-lg text-gray-600 mb-4">What do you want to learn words about?</p>
                 <div className="flex gap-4 justify-center">
                     <input
@@ -61,6 +97,55 @@ const TwiLearningModule = ({ onBack }) => {
                         {loading ? 'Thinking...' : 'Teach Me!'}
                     </button>
                 </div>
+            </div>
+
+            {/* Instant Translation Section */}
+            <div className="mb-12 bg-blue-50 p-6 rounded-xl border border-blue-200">
+                <h3 className="text-xl font-bold text-blue-800 mb-4 text-center">Instant Translator 🔄</h3>
+
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-center" role="alert">
+                        <span className="block sm:inline">{error}</span>
+                    </div>
+                )}
+
+                <div className="flex gap-4 justify-center mb-4">
+                    <input
+                        type="text"
+                        value={textToTranslate}
+                        onChange={(e) => setTextToTranslate(e.target.value)}
+                        placeholder="Type anything to translate..."
+                        className="p-4 border-2 border-blue-200 rounded-xl text-lg w-full max-w-md focus:border-blue-500 focus:outline-none"
+                    />
+                    <button
+                        onClick={handleTranslate}
+                        disabled={translating || !textToTranslate}
+                        className="bg-blue-500 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-600 disabled:opacity-50"
+                    >
+                        {translating ? 'Translating...' : 'Translate'}
+                    </button>
+                </div>
+
+                {translationResult && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm max-w-2xl mx-auto text-center animate-fade-in">
+                        <div className="flex justify-center items-center gap-4 mb-2">
+                            <h4 className="text-3xl font-bold text-gray-800">{translationResult.translation}</h4>
+                            <button
+                                onClick={() => speakText(translationResult.translation)}
+                                className="text-3xl hover:scale-110 transition"
+                                title="Listen"
+                            >
+                                🔊
+                            </button>
+                        </div>
+                        <p className="text-gray-500 italic mb-2">"{translationResult.pronunciation}"</p>
+                        {translationResult.notes && (
+                            <p className="text-sm text-blue-600 bg-blue-50 inline-block px-3 py-1 rounded-full">
+                                💡 {translationResult.notes}
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

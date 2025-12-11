@@ -33,6 +33,65 @@ client = None
 if api_key:
     client = genai.Client(api_key=api_key)
 
+# Configure Local LLM (Ollama)
+from openai import OpenAI
+llm_provider = os.getenv("LLM_PROVIDER", "gemini") # 'gemini' or 'local'
+local_llm_url = os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1")
+local_client = None
+local_model = os.getenv("LOCAL_LLM_MODEL", "llama3")
+
+if llm_provider == "local":
+    print(f"Using Local LLM Provider at {local_llm_url} with model {local_model}")
+    local_client = OpenAI(
+        base_url=local_llm_url,
+        api_key="ollama", # required for compatibility but ignored
+    )
+
+def app_generate_content(prompt, model_name=None, response_mime_type=None):
+    if llm_provider == "local" and local_client:
+        try:
+            messages = [{"role": "user", "content": prompt}]
+            
+            # Simple JSON heuristic
+            response_format = None
+            if response_mime_type == 'application/json':
+                response_format = {"type": "json_object"}
+            
+            response = local_client.chat.completions.create(
+                model=local_model,
+                messages=messages,
+                response_format=response_format
+            )
+            
+            # Mimic Gemini response object structure for compatibility
+            class MockResponse:
+                def __init__(self, text):
+                    self.text = text
+            
+            return MockResponse(response.choices[0].message.content)
+        except Exception as e:
+            print(f"Local LLM Error: {e}")
+            raise HTTPException(status_code=500, detail=f"Local LLM Error: {str(e)}")
+
+    elif llm_provider == "gemini" and client:
+        # Default to flash if not specified
+        target_model = model_name or 'gemini-1.5-flash'
+        config = None
+        if response_mime_type:
+            config = types.GenerateContentConfig(response_mime_type=response_mime_type)
+            
+        return client.models.generate_content(
+            model=target_model,
+            contents=prompt,
+            config=config
+        )
+    else:
+        # Fallback/Error if no provider configured
+        class MockResponse:
+            def __init__(self, text):
+                self.text = text
+        return MockResponse("Error: No LLM provider configured")
+
 # Configure ElevenLabs
 # Configure ElevenLabs
 elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
@@ -85,10 +144,9 @@ def generate_greeting(request: GreetingRequest):
     if request.grade <= 2:
         prompt = f"You are a kind, encouraging elementary school teacher. Say hello to {request.name}, a 2nd grader, and ask if they are ready to play with words and numbers! Keep it very short and fun."
     else:
-        prompt = f"You are a helpful tutor. Say hello to {request.name}, a 4th grader. Encourage them to tackle some math and science today. Keep it short and motivating."
-
+        prompt = f"Greet {request.name}, a {request.grade}th grader. Be encouraging and brief."
     try:
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
+        response = app_generate_content(prompt)
         return {"message": response.text}
     except Exception as e:
         print(f"Error: {e}")
@@ -121,7 +179,7 @@ def chat_with_tutor(request: ChatRequest):
     """
 
     try:
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
+        response = app_generate_content(prompt, model_name='gemini-2.0-flash')
         return {"reply": response.text}
     except Exception as e:
         print(f"Error in chat: {e}")
@@ -155,10 +213,10 @@ def generate_lesson_plan(request: LessonPlanRequest):
     Example: {{ "plan": ["What is a Volcano?", "Types of Volcanoes", "Why do they Erupt?"] }}
     """
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type='application/json')
+        response = app_generate_content(
+            prompt,
+            model_name='gemini-2.0-flash',
+            response_mime_type='application/json'
         )
         return json.loads(response.text)
     except Exception as e:
@@ -182,7 +240,7 @@ def generate_lesson_content(request: LessonContentRequest):
     """
     
     try:
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=content_prompt)
+        response = app_generate_content(content_prompt, model_name='gemini-2.0-flash')
         content = response.text
         
         # Decide if an image would be helpful
@@ -201,10 +259,10 @@ def generate_lesson_content(request: LessonContentRequest):
         }}
         """
         
-        image_decision = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=image_decision_prompt,
-            config=types.GenerateContentConfig(response_mime_type='application/json')
+        image_decision = app_generate_content(
+            image_decision_prompt,
+            model_name='gemini-2.0-flash',
+            response_mime_type='application/json'
         )
         
         try:
@@ -217,7 +275,7 @@ def generate_lesson_content(request: LessonContentRequest):
             
         image_url = None
         
-        if decision_data.get("needs_image", False) and decision_data.get("image_prompt"):
+        if llm_provider == "gemini" and decision_data.get("needs_image", False) and decision_data.get("image_prompt"):
             # Generate image using fast Imagen model
             try:
                 image_prompt = f"Educational illustration for Grade {request.grade} students: {decision_data['image_prompt']}. Clear, colorful, age-appropriate, diagram style. No text or labels."
@@ -278,10 +336,10 @@ def generate_quiz(request: QuizRequest):
     """
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=user_prompt,
-            config=types.GenerateContentConfig(response_mime_type='application/json')
+        response = app_generate_content(
+            user_prompt,
+            model_name='gemini-2.0-flash',
+            response_mime_type='application/json'
         )
         return json.loads(response.text)
     except Exception as e:
@@ -314,6 +372,46 @@ def save_result(result: ResultRequest, db: Session = Depends(get_db)):
 class TwiRequest(BaseModel):
     topic: str
 
+class TwiTranslateRequest(BaseModel):
+    text: str
+
+@app.post("/api/twi/translate")
+def translate_to_twi(request: TwiTranslateRequest):
+    if not api_key:
+        return {
+            "translation": "Simulation: " + request.text,
+            "pronunciation": "Sim-u-la-tion",
+            "notes": "API Key missing"
+        }
+
+    prompt = f"""
+    You are an expert Twi language translator (Asante Twi).
+    Translate the following text into natural, idiomatic Twi: "{request.text}"
+    
+    Format the output as a JSON object with these keys:
+    - 'translation': The Twi translation.
+    - 'pronunciation': A phonetic guide for the Twi text.
+    - 'notes': Brief notes on context or literal meaning if helpful (optional).
+    
+    Example:
+    {{
+      "translation": "Mema wo ahyia",
+      "pronunciation": "Meh-ma wo a-shia",
+      "notes": "Formal greeting used when meeting someone."
+    }}
+    """
+    
+    try:
+        response = app_generate_content(
+            prompt,
+            model_name='gemini-2.0-flash',
+            response_mime_type='application/json'
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/twi/vocab")
 def generate_twi_vocab(request: TwiRequest):
     if not api_key:
@@ -321,9 +419,10 @@ def generate_twi_vocab(request: TwiRequest):
 
     prompt = f"""
     You are an expert Twi language teacher (Asante Twi).
-    Create a list of 5 common Twi words or phrases related to '{request.topic}'.
+    Create a comprehensive list of 18 common Twi words and phrases related to '{request.topic}'.
+    Include a diverse mix of nouns, verbs, adjectives, and useful phrases.
     Format the output as a JSON object with a key 'vocab'.
-    Each item should have: 'twi' (the word/phrase), 'english' (translation), 'pronunciation' (phonetic guide), and 'example' (a simple sentence using the word).
+    Each item should have: 'twi' (the word/phrase), 'english' (translation), 'pronunciation' (phonetic guide), and 'example' (a simple sentence using the word in Twi with English translation).
     Example:
     {{
       "vocab": [
@@ -338,10 +437,10 @@ def generate_twi_vocab(request: TwiRequest):
     """
     
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type='application/json')
+        response = app_generate_content(
+            prompt,
+            model_name='gemini-1.5-flash',
+            response_mime_type='application/json'
         )
         return json.loads(response.text)
     except Exception as e:
@@ -885,10 +984,10 @@ def generate_flashcards(request: FlashcardGenerateRequest):
     """
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type='application/json')
+        response = app_generate_content(
+            prompt,
+            model_name='gemini-1.5-flash',
+            response_mime_type='application/json'
         )
         return json.loads(response.text)
     except Exception as e:
