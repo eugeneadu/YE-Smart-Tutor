@@ -545,6 +545,65 @@ def change_pin(update: PinUpdate, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "PIN updated successfully"}
 
+class RecoverySetup(BaseModel):
+    question: str
+    answer: str
+
+class RecoverPin(BaseModel):
+    answer: str
+    new_pin: str
+
+@app.get("/api/admin/security-question")
+def get_security_question(db: Session = Depends(get_db)):
+    setting = db.query(models.Settings).filter(models.Settings.key == "security_question").first()
+    if setting and setting.value:
+        return {"question": setting.value}
+    return {"question": None}
+
+@app.post("/api/admin/setup-recovery")
+def setup_recovery(setup: RecoverySetup, db: Session = Depends(get_db)):
+    # Save Question
+    q_setting = db.query(models.Settings).filter(models.Settings.key == "security_question").first()
+    if not q_setting:
+        q_setting = models.Settings(key="security_question", value=setup.question)
+        db.add(q_setting)
+    else:
+        q_setting.value = setup.question
+        
+    # Save Answer (lowercased and stripped for robustness)
+    normalized_answer = setup.answer.strip().lower()
+    a_setting = db.query(models.Settings).filter(models.Settings.key == "security_answer").first()
+    if not a_setting:
+        a_setting = models.Settings(key="security_answer", value=normalized_answer)
+        db.add(a_setting)
+    else:
+        a_setting.value = normalized_answer
+        
+    db.commit()
+    return {"message": "Recovery method saved successfully"}
+
+@app.post("/api/admin/recover-pin")
+def recover_pin(recover: RecoverPin, db: Session = Depends(get_db)):
+    a_setting = db.query(models.Settings).filter(models.Settings.key == "security_answer").first()
+    if not a_setting or not a_setting.value:
+        raise HTTPException(status_code=400, detail="No security question set up.")
+        
+    # Check answer
+    normalized_input = recover.answer.strip().lower()
+    if normalized_input != a_setting.value:
+        raise HTTPException(status_code=400, detail="Incorrect answer.")
+        
+    # Overwrite PIN
+    pin_setting = db.query(models.Settings).filter(models.Settings.key == "parent_pin").first()
+    if not pin_setting:
+        pin_setting = models.Settings(key="parent_pin", value=recover.new_pin)
+        db.add(pin_setting)
+    else:
+        pin_setting.value = recover.new_pin
+        
+    db.commit()
+    return {"message": "PIN recovered and updated successfully"}
+
 @app.post("/api/students/xp")
 def add_xp(update: XPUpdate, db: Session = Depends(get_db)):
     db_student = db.query(models.Student).filter(models.Student.id == update.student_id).first()

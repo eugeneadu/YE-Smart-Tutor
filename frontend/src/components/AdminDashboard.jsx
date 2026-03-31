@@ -95,6 +95,36 @@ const AdminDashboard = ({ onBack }) => {
 
     const [editingStudent, setEditingStudent] = useState(null);
 
+    const [recoveryQuestion, setRecoveryQuestion] = useState('');
+    const [recoveryAnswer, setRecoveryAnswer] = useState('');
+    const [recoveryMessage, setRecoveryMessage] = useState('');
+
+    const handleSetRecovery = async () => {
+        if (!recoveryQuestion || !recoveryAnswer) {
+            setRecoveryMessage('Please fill in both fields ❌');
+            return;
+        }
+        try {
+            const res = await fetch('/api/admin/setup-recovery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: recoveryQuestion, answer: recoveryAnswer })
+            });
+
+            if (res.ok) {
+                setRecoveryMessage('Recovery question saved successfully! ✅');
+                setRecoveryQuestion('');
+                setRecoveryAnswer('');
+                setTimeout(() => setRecoveryMessage(''), 3000);
+            } else {
+                setRecoveryMessage('Error saving recovery info ❌');
+            }
+        } catch (err) {
+            console.error("Error setting recovery:", err);
+            setRecoveryMessage('Server error ❌');
+        }
+    };
+
     const handleEditClick = (student) => {
         setEditingStudent({ ...student });
     };
@@ -195,6 +225,41 @@ const AdminDashboard = ({ onBack }) => {
                         Add
                     </button>
                 </div>
+            </div>
+
+            {/* Account Recovery Section */}
+            <div className="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-purple-100">
+                <h2 className="text-xl font-bold text-gray-700 mb-2">Account Recovery Setup 🔐</h2>
+                <p className="text-sm text-gray-500 mb-4">Set a security question so you can recover your Admin Dashboard access if you ever forget your Parent PIN.</p>
+                <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1">
+                        <label className="block text-sm text-gray-600 mb-1">Security Question</label>
+                        <input
+                            type="text"
+                            value={recoveryQuestion}
+                            onChange={(e) => setRecoveryQuestion(e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:border-purple-500"
+                            placeholder="e.g., What is the name of my first pet?"
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-sm text-gray-600 mb-1">Answer</label>
+                        <input
+                            type="text"
+                            value={recoveryAnswer}
+                            onChange={(e) => setRecoveryAnswer(e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:border-purple-500"
+                            placeholder="e.g., Fluffy"
+                        />
+                    </div>
+                    <button
+                        onClick={handleSetRecovery}
+                        className="px-6 py-3 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600"
+                    >
+                        Save
+                    </button>
+                </div>
+                {recoveryMessage && <p className={`mt-4 font-bold text-sm ${recoveryMessage.includes('✅') ? 'text-green-500' : 'text-red-500'}`}>{recoveryMessage}</p>}
             </div>
 
             {/* Student Progress Section */}

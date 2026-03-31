@@ -11,12 +11,10 @@ services:
   backend:
     image: ghcr.io/eugeneadu/yesmarttutor-backend:latest
     container_name: yesmarttutor-backend
-    ports:
-      - "8000:8000"
     volumes:
       - ./backend_data:/app/data
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-replace_this_with_your_key}
+      - GOOGLE_API_KEY="your_api_key_goes_here_without_brackets"
     restart: unless-stopped
 
   # Bonus Automation: Watchtower will automatically detect when GitHub Actions

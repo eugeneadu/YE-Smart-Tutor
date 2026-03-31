@@ -103,6 +103,13 @@ function App() {
   const [parentPin, setParentPin] = useState('');
   const [pinError, setPinError] = useState(false);
 
+  // Recovery States
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [securityQuestion, setSecurityQuestion] = useState(null);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+
   const handleParentAccess = async () => {
     try {
       const res = await fetch('/api/admin/verify-pin', {
@@ -137,6 +144,50 @@ function App() {
     }
   };
 
+  const handleForgotPin = async () => {
+    try {
+      const res = await fetch('/api/admin/security-question');
+      const data = await res.json();
+      if (data.question) {
+        setSecurityQuestion(data.question);
+        setIsRecovering(true);
+        setRecoveryError('');
+      } else {
+        setRecoveryError('No security question was set up for this account.');
+      }
+    } catch (err) {
+      setRecoveryError('Error connecting to server.');
+    }
+  };
+
+  const handleRecoverPin = async () => {
+    if (newPin.length !== 4) {
+      setRecoveryError('New PIN must be 4 digits.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/recover-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer: securityAnswer, new_pin: newPin })
+      });
+      if (!res.ok) {
+        setRecoveryError('Incorrect answer.');
+        return;
+      }
+      // Success! Log them in.
+      setCurrentProfile({ name: 'Admin', grade: 0 });
+      setViewMode('admin');
+      setShowParentLock(false);
+      setIsRecovering(false);
+      setParentPin('');
+      setSecurityAnswer('');
+      setNewPin('');
+    } catch (err) {
+      setRecoveryError('Error recovering PIN.');
+    }
+  };
+
   if (!currentProfile) {
     return (
       <>
@@ -155,35 +206,83 @@ function App() {
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="glass-panel p-8 max-w-sm w-full text-center relative overflow-hidden rounded-[2rem]">
               <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-indigo-500/20 rounded-full blur-3xl"></div>
-              <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Parent Access</h3>
-              <p className="text-slate-400 mb-6 relative z-10">Enter PIN to continue</p>
-
-              <input
-                type="password"
-                value={parentPin}
-                onChange={(e) => { setParentPin(e.target.value); setPinError(false); }}
-                className={`w-full p-4 text-center text-2xl tracking-[1em] border-2 rounded-2xl mb-4 focus:outline-none bg-slate-800/50 text-slate-100 transition-all z-10 relative ${pinError ? 'border-pink-500/50 focus:border-pink-500' : 'border-slate-700 focus:border-indigo-500'}`}
-                placeholder="••••"
-                maxLength={4}
-                autoFocus
-              />
-
-              {pinError && <p className="text-pink-400 text-sm mb-4 relative z-10">Incorrect PIN</p>}
-
-              <div className="flex gap-4 relative z-10">
-                <button
-                  onClick={() => { setShowParentLock(false); setParentPin(''); setPinError(false); }}
-                  className="flex-1 py-3 text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleParentAccess}
-                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all"
-                >
-                  Unlock
-                </button>
-              </div>
+              {!isRecovering ? (
+                <>
+                  <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Parent Access</h3>
+                  <p className="text-slate-400 mb-6 relative z-10">Enter PIN to continue</p>
+    
+                  <input
+                    type="password"
+                    value={parentPin}
+                    onChange={(e) => { setParentPin(e.target.value); setPinError(false); setRecoveryError(''); }}
+                    className={`w-full p-4 text-center text-2xl tracking-[1em] border-2 rounded-2xl mb-4 focus:outline-none bg-slate-800/50 text-slate-100 transition-all z-10 relative ${pinError ? 'border-pink-500/50 focus:border-pink-500' : 'border-slate-700 focus:border-indigo-500'}`}
+                    placeholder="••••"
+                    maxLength={4}
+                    autoFocus
+                  />
+    
+                  {pinError && <p className="text-pink-400 text-sm mb-4 relative z-10">Incorrect PIN</p>}
+                  {recoveryError && <p className="text-pink-400 text-sm mb-4 relative z-10">{recoveryError}</p>}
+    
+                  <div className="flex gap-4 relative z-10 mb-4">
+                    <button
+                      onClick={() => { setShowParentLock(false); setParentPin(''); setPinError(false); setRecoveryError(''); }}
+                      className="flex-1 py-3 text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleParentAccess}
+                      className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all"
+                    >
+                      Unlock
+                    </button>
+                  </div>
+                  
+                  <button onClick={handleForgotPin} className="text-xs text-indigo-400 hover:text-indigo-300 relative z-10 font-medium">
+                    Forgot PIN?
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold text-slate-100 mb-2 relative z-10">Reset PIN</h3>
+                  <p className="text-indigo-300 mb-6 relative z-10 text-sm">{securityQuestion}</p>
+                  
+                  <input
+                    type="text"
+                    value={securityAnswer}
+                    onChange={(e) => { setSecurityAnswer(e.target.value); setRecoveryError(''); }}
+                    className="w-full p-4 text-center text-lg border-2 rounded-2xl mb-4 focus:outline-none bg-slate-800/50 text-slate-100 transition-all z-10 relative border-slate-700 focus:border-indigo-500"
+                    placeholder="Your Answer"
+                  />
+                  
+                  <input
+                    type="password"
+                    value={newPin}
+                    onChange={(e) => { setNewPin(e.target.value); setRecoveryError(''); }}
+                    className="w-full p-4 text-center text-xl tracking-[0.5em] border-2 rounded-2xl mb-4 focus:outline-none bg-slate-800/50 text-slate-100 transition-all z-10 relative border-slate-700 focus:border-indigo-500"
+                    placeholder="New 4-Digit PIN"
+                    maxLength={4}
+                  />
+                  
+                  {recoveryError && <p className="text-pink-400 text-sm mb-4 relative z-10">{recoveryError}</p>}
+                  
+                  <div className="flex gap-4 relative z-10">
+                    <button
+                      onClick={() => { setIsRecovering(false); setSecurityAnswer(''); setNewPin(''); setRecoveryError(''); }}
+                      className="flex-1 py-3 text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all font-medium"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleRecoverPin}
+                      className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all"
+                    >
+                      Reset & Login
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
