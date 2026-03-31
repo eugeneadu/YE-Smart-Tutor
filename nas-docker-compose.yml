@@ -16,7 +16,7 @@ services:
     environment:
       - LLM_PROVIDER=local
       - LOCAL_LLM_URL=http://ollama:11434/v1
-      - LOCAL_LLM_MODEL=llama3.2
+      - LOCAL_LLM_MODEL=llama3.2:1b
     restart: unless-stopped
     depends_on:
       - ollama
