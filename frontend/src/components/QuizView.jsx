@@ -270,19 +270,19 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
 
             <div className="grid gap-4 mb-8">
                 {currentQuestion.options.map((option, idx) => {
-                    let buttonStyle = "bg-gray-50 border-2 border-gray-200 hover:border-blue-300";
+                    let buttonStyle = "bg-white border-2 border-slate-200 hover:border-indigo-300 text-slate-800 shadow-sm";
 
                     if (selectedAnswer === option) {
-                        buttonStyle = "bg-blue-50 border-2 border-blue-500";
+                        buttonStyle = "bg-indigo-50 border-2 border-indigo-500 text-indigo-900";
                     }
 
                     if (isAnswerChecked) {
                         if (option === currentQuestion.correct) {
-                            buttonStyle = "bg-green-100 border-2 border-green-500 text-green-800";
+                            buttonStyle = "bg-emerald-50 border-2 border-emerald-500 text-emerald-800";
                         } else if (selectedAnswer === option && option !== currentQuestion.correct) {
-                            buttonStyle = "bg-red-100 border-2 border-red-500 text-red-800";
+                            buttonStyle = "bg-rose-50 border-2 border-rose-500 text-rose-800";
                         } else {
-                            buttonStyle = "opacity-50";
+                            buttonStyle = "opacity-50 text-slate-700";
                         }
                     }
 
@@ -290,7 +290,7 @@ const QuizView = ({ subject, topic, grade, studentName, studentId, numQuestions 
                         <button
                             key={idx}
                             onClick={() => handleAnswerSelect(option)}
-                            className={`p - 4 rounded - xl text - left text - lg font - medium transition - all ${buttonStyle} `}
+                            className={`p-4 rounded-xl text-left text-lg font-medium transition-all ${buttonStyle}`}
                             disabled={isAnswerChecked}
                         >
                             {option}

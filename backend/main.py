@@ -142,9 +142,9 @@ def generate_greeting(request: GreetingRequest):
 
     prompt = ""
     if request.grade <= 2:
-        prompt = f"You are a kind, encouraging elementary school teacher. Say hello to {request.name}, a 2nd grader, and ask if they are ready to play with words and numbers! Keep it very short and fun."
+        prompt = f"You are Professor Hoot, a wise and magical owl tutor. Enthusiastically say hello to {request.name}, a Grade {request.grade} student, and ask if they are ready for a fun learning adventure! Use an emoji and keep it to one short sentence."
     else:
-        prompt = f"Greet {request.name}, a {request.grade}th grader. Be encouraging and brief."
+        prompt = f"You are Professor Hoot, a wise and magical owl tutor. Enthusiastically greet {request.name}, a Grade {request.grade} student. Be encouraging, keep it to one short sentence, and use an emoji."
     try:
         response = app_generate_content(prompt)
         return {"message": response.text}
@@ -230,13 +230,14 @@ def generate_lesson_content(request: LessonContentRequest):
 
     # Generate the text content
     content_prompt = f"""
-    You are a tutor for a Grade {request.grade} student.
+    You are Professor Hoot, an engaging and magical tutor for a Grade {request.grade} student.
     Subject: {request.subject}
     Main Topic: {request.topic}
     Current Sub-topic: {request.subtopic}
 
-    Write a clear, engaging, and age-appropriate explanation for this specific sub-topic. 
-    Use analogies if helpful. Keep it focused on '{request.subtopic}'.
+    Write a clear, exciting, and age-appropriate explanation for this specific sub-topic. 
+    Crucially, you MUST format your response beautifully using Markdown! Use **bolding** for important key words, create bulleted lists for clarity, and sprinkle in relevant emojis to make it visually engaging and less intimidating for a kid.
+    Use fun analogies if helpful. Keep it focused on '{request.subtopic}'.
     """
     
     try:
@@ -327,9 +328,10 @@ def generate_quiz(request: QuizRequest):
     {system_prompt}
     Create a {request.num_questions}-question multiple choice quiz about '{request.topic}' in {request.subject}.
     The output must be a JSON object with a key 'questions'.
+    Make sure to include a relevant emoji in every single 'question' string to make the quiz feel like a fun game!
     Each question object should have: 
     - 'id'
-    - 'question'
+    - 'question' (e.g., "What is the capital of France? 🇫🇷")
     - 'options' (list of 4 strings)
     - 'correct' (the string of the correct answer)
     - 'explanation' (a short sentence explaining why the correct answer is right and why others might be wrong)
@@ -618,12 +620,27 @@ async def generate_speech(request: TTSRequest):
         import asyncio
         from io import BytesIO
         
+        import re
+        
         # Use a friendly female voice (Jenny is clear and pleasant)
         # You can also try: en-US-AriaNeural, en-US-SaraNeural
         voice = "en-US-JennyNeural"
         
-        # Clean text for TTS (remove markdown asterisks)
-        clean_text = request.text.replace("*", "")
+        # Clean text for TTS (remove markdown asterisks and emojis)
+        clean_text = request.text.replace("*", "").replace("#", "")
+        
+        # Regex to strip out common emoji ranges so the TTS engine doesn't read them out
+        emoji_pattern = re.compile(
+            r'['
+            r'\U0001f600-\U0001f64f'  # emoticons
+            r'\U0001f300-\U0001f5ff'  # symbols & pictographs
+            r'\U0001f680-\U0001f6ff'  # transport & map symbols
+            r'\U0001f1e0-\U0001f1ff'  # flags
+            r'\u2600-\u27bf'          # misc symbols and dingbats
+            r'\U0001f900-\U0001f9ff'  # supplemental symbols
+            r'\U0001fa70-\U0001faff'  # symbols and pictographs ext-a
+            r']+', flags=re.UNICODE)
+        clean_text = emoji_pattern.sub(r'', clean_text)
         
         # Generate speech using Edge TTS
         communicate = edge_tts.Communicate(clean_text, voice)

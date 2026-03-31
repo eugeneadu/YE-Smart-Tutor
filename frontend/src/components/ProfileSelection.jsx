@@ -12,7 +12,6 @@ const ProfileSelection = ({ onSelectProfile }) => {
                 if (data && data.length > 0) {
                     setProfiles(data);
                 } else {
-                    // Fallback defaults if DB is empty
                     setProfiles([
                         { id: 1, name: 'Yudelle', grade: 4, avatar: '👧' },
                         { id: 2, name: 'Emmalyn', grade: 2, avatar: '🧒' }
@@ -20,7 +19,6 @@ const ProfileSelection = ({ onSelectProfile }) => {
                 }
             } catch (err) {
                 console.error("Error fetching students:", err);
-                // Fallback defaults on error
                 setProfiles([
                     { id: 1, name: 'Yudelle', grade: 4, avatar: '👧' },
                     { id: 2, name: 'Emmalyn', grade: 2, avatar: '🧒' }
@@ -41,28 +39,47 @@ const ProfileSelection = ({ onSelectProfile }) => {
             onSelectProfile(studentData);
         } catch (err) {
             console.error("Error fetching student:", err);
-            // Fallback to local profile if offline
             onSelectProfile(profile);
         }
     };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full text-center">
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">Who is learning today?</h1>
-                <p className="text-gray-500 mb-12">Select your profile to start your adventure!</p>
+    const getAvatarImg = (name, emojiAvatar) => {
+        if (name.toLowerCase() === 'yudelle') return <img src="/avatars/yudelle.png" alt="Yudelle" className="w-full h-full object-cover rounded-full" />;
+        if (name.toLowerCase() === 'emmalyn') return <img src="/avatars/emmalyn.png" alt="Emmalyn" className="w-full h-full object-cover rounded-full" />;
+        return <div className="flex items-center justify-center w-full h-full text-7xl">{emojiAvatar}</div>;
+    };
 
-                <div className="flex flex-wrap justify-center gap-8 mb-12">
-                    {profiles.map((profile) => (
+    return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="glass-panel p-10 md:p-16 rounded-[3rem] w-full max-w-5xl text-center relative overflow-hidden animate-fade-in group">
+                <div className="absolute top-[-100px] left-[-100px] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow"></div>
+                <div className="absolute bottom-[-100px] right-[-100px] w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow font-delay-1000"></div>
+                
+                <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 mb-4 animate-float">
+                    Welcome to Smart Tutor
+                </h1>
+                <p className="text-slate-300 text-xl font-light tracking-wide mb-16">
+                    Choose your profile to begin today's adventure!
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-12">
+                    {profiles.map((profile, i) => (
                         <div
                             key={profile.id}
                             onClick={() => handleSelect(profile)}
-                            className="group cursor-pointer transform hover:scale-110 transition-all duration-300"
+                            className={`glass-card p-6 w-56 flex flex-col items-center justify-center cursor-pointer group hover:-translate-y-4`}
+                            style={{ animationDelay: `${i * 150}ms` }}
                         >
-                            <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center text-6xl mb-4 group-hover:bg-blue-200 shadow-lg border-4 border-white group-hover:border-blue-300">
-                                {profile.avatar}
+                            <div className="w-40 h-40 rounded-full bg-slate-800/50 flex items-center justify-center mb-6 shadow-2xl border-4 border-slate-700/50 group-hover:border-indigo-400 transition-colors duration-500 relative overflow-hidden">
+                                {getAvatarImg(profile.name, profile.avatar)}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-700 group-hover:text-blue-600">{profile.name}</h3>
+                            <h3 className="text-3xl font-bold text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-pink-400 transition-all">
+                                {profile.name}
+                            </h3>
+                            <div className="mt-2 text-sm font-medium text-slate-400 uppercase tracking-widest bg-slate-800/50 px-4 py-1 rounded-full border border-slate-700">
+                                Grade {profile.grade}
+                            </div>
                         </div>
                     ))}
                 </div>

@@ -63,7 +63,7 @@ const LessonLibrary = ({ studentId, onExit }) => {
                 {/* Content Viewer */}
                 <div className="w-2/3 bg-white rounded-3xl shadow-sm border border-gray-100 p-8 overflow-y-auto">
                     {selectedLog ? (
-                        <div className="prose prose-blue max-w-none">
+                        <div className="prose prose-blue max-w-none text-gray-700">
                             <h2 className="text-3xl font-bold text-gray-800 mb-2">{selectedLog.topic}</h2>
                             <div className="text-sm text-gray-400 mb-8 border-b pb-4">
                                 {selectedLog.subject} • {new Date(selectedLog.timestamp).toLocaleString()}

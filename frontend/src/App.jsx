@@ -152,33 +152,34 @@ function App() {
         </div>
 
         {showParentLock && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Parent Access</h3>
-              <p className="text-gray-500 mb-6">Enter PIN to continue (Default: 1234)</p>
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="glass-panel p-8 max-w-sm w-full text-center relative overflow-hidden rounded-[2rem]">
+              <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-indigo-500/20 rounded-full blur-3xl"></div>
+              <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Parent Access</h3>
+              <p className="text-slate-400 mb-6 relative z-10">Enter PIN to continue</p>
 
               <input
                 type="password"
                 value={parentPin}
                 onChange={(e) => { setParentPin(e.target.value); setPinError(false); }}
-                className={`w-full p-4 text-center text-2xl tracking-widest border-2 rounded-xl mb-4 focus:outline-none ${pinError ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-blue-500'}`}
+                className={`w-full p-4 text-center text-2xl tracking-[1em] border-2 rounded-2xl mb-4 focus:outline-none bg-slate-800/50 text-slate-100 transition-all z-10 relative ${pinError ? 'border-pink-500/50 focus:border-pink-500' : 'border-slate-700 focus:border-indigo-500'}`}
                 placeholder="••••"
                 maxLength={4}
                 autoFocus
               />
 
-              {pinError && <p className="text-red-500 text-sm mb-4">Incorrect PIN</p>}
+              {pinError && <p className="text-pink-400 text-sm mb-4 relative z-10">Incorrect PIN</p>}
 
-              <div className="flex gap-4">
+              <div className="flex gap-4 relative z-10">
                 <button
                   onClick={() => { setShowParentLock(false); setParentPin(''); setPinError(false); }}
-                  className="flex-1 py-3 text-gray-500 hover:bg-gray-100 rounded-xl"
+                  className="flex-1 py-3 text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleParentAccess}
-                  className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700"
+                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all"
                 >
                   Unlock
                 </button>
@@ -191,40 +192,46 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 p-4 md:p-8 font-sans">
-      <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-3xl font-bold text-blue-600 cursor-pointer" onClick={handleBackToDashboard}>
+    <div className="min-h-screen p-4 md:p-8">
+      <header className="glass-header rounded-3xl p-4 md:px-8 flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-slate-700/50">
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 cursor-pointer hover:scale-105 transition-transform" onClick={handleBackToDashboard}>
           Y&E Smart Tutor
         </h1>
 
         <div className="flex items-center gap-6">
           {/* Gamification HUD */}
-          <div className="bg-white px-6 py-2 rounded-full shadow-sm flex items-center gap-4 border-2 border-yellow-400">
+          <div className="bg-slate-800/60 px-6 py-3 rounded-2xl flex items-center gap-4 border border-slate-700 shadow-inner">
             <div className="text-center">
-              <div className="text-xs text-gray-500 font-bold uppercase">Level {currentProfile.level || 1}</div>
-              <div className="text-sm font-bold text-purple-600">{getLevelTitle(currentProfile.level || 1)}</div>
+              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Lvl {currentProfile.level || 1}</div>
+              <div className="text-sm font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">{getLevelTitle(currentProfile.level || 1)}</div>
             </div>
             <div className="w-32">
-              <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <div className="flex justify-between text-[10px] text-slate-400 mb-1 font-bold tracking-wider">
                 <span>XP</span>
                 <span>{currentProfile.xp || 0} / {getNextLevelXP(currentProfile.level || 1)}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-slate-900 rounded-full h-3 shadow-inner overflow-hidden border border-slate-700/50">
                 <div
-                  className="bg-yellow-400 h-2.5 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000 relative"
                   style={{ width: `${Math.min(100, ((currentProfile.xp || 0) / getNextLevelXP(currentProfile.level || 1)) * 100)}%` }}
-                ></div>
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-shine"></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-sm">
-            <span className="text-xl font-semibold text-gray-700">
-              {currentProfile.name} <span className="text-sm text-gray-500">(Grade {currentProfile.grade})</span>
+          <div className="flex items-center gap-4 bg-slate-800/60 px-5 py-2 rounded-2xl border border-slate-700 shadow-inner">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-400/50 bg-slate-700 flex items-center justify-center text-xl">
+               {currentProfile.name.toLowerCase() === 'yudelle' ? <img src="/avatars/yudelle.png" alt="Yudelle" className="w-full h-full object-cover"/> : currentProfile.name.toLowerCase() === 'emmalyn' ? <img src="/avatars/emmalyn.png" alt="Emmalyn" className="w-full h-full object-cover"/> : currentProfile.avatar}
+            </div>
+            <span className="text-lg font-bold text-slate-200">
+              {currentProfile.name}
             </span>
+            <div className="h-6 w-[1px] bg-slate-700 mx-1"></div>
             <button
               onClick={() => { setCurrentProfile(null); setViewMode('dashboard'); }}
-              className="text-sm text-red-400 hover:text-red-600 font-bold"
+              className="text-sm text-slate-400 hover:text-pink-400 font-bold transition-colors"
             >
               Logout
             </button>
@@ -232,11 +239,12 @@ function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto">
+      <main className="max-w-6xl mx-auto">
         {viewMode === 'dashboard' && (
           <div className="animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-sm p-6 mb-8 text-center border-l-4 border-blue-400">
-              <p className="text-gray-600 text-lg italic">
+            <div className="glass-panel p-6 mb-8 text-center rounded-3xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+              <p className="text-indigo-200 text-xl font-medium tracking-wide relative z-10">
                 "{greeting}"
               </p>
             </div>
