@@ -252,33 +252,34 @@ def generate_lesson_content(request: LessonContentRequest):
         
         # Decide if an image would be helpful
         decision_data = {}
-        try:
-            image_decision_prompt = f"""
-            Topic: {request.subtopic}
-            Subject: {request.subject}
-            Grade: {request.grade}
-            
-            Would a visual diagram, illustration, or educational image significantly help a Grade {request.grade} student understand "{request.subtopic}"?
-            Consider: diagrams for processes, scientific concepts, historical events, geography, anatomy, chemistry, physics, etc.
-            
-            Respond with JSON:
-            {{
-                "needs_image": true/false,
-                "image_prompt": "A detailed prompt for generating an educational illustration" (only if needs_image is true)
-            }}
-            """
-            
-            image_decision = app_generate_content(
-                image_decision_prompt,
-                model_name='gemini-2.0-flash',
-                response_mime_type='application/json'
-            )
-            
-            decision_data = json.loads(image_decision.text)
-            if isinstance(decision_data, list):
-                decision_data = decision_data[0] if decision_data else {}
-        except Exception as img_dec_error:
-            print(f"Safe ignoring image decision error to salvage lesson text: {img_dec_error}")
+        if llm_provider != "local":
+            try:
+                image_decision_prompt = f"""
+                Topic: {request.subtopic}
+                Subject: {request.subject}
+                Grade: {request.grade}
+                
+                Would a visual diagram, illustration, or educational image significantly help a Grade {request.grade} student understand "{request.subtopic}"?
+                Consider: diagrams for processes, scientific concepts, historical events, geography, anatomy, chemistry, physics, etc.
+                
+                Respond with JSON:
+                {{
+                    "needs_image": true/false,
+                    "image_prompt": "A detailed prompt for generating an educational illustration" (only if needs_image is true)
+                }}
+                """
+                
+                image_decision = app_generate_content(
+                    image_decision_prompt,
+                    model_name='gemini-2.0-flash',
+                    response_mime_type='application/json'
+                )
+                
+                decision_data = json.loads(image_decision.text)
+                if isinstance(decision_data, list):
+                    decision_data = decision_data[0] if decision_data else {}
+            except Exception as img_dec_error:
+                print(f"Safe ignoring image decision error to salvage lesson text: {img_dec_error}")
             
         image_url = None
         
