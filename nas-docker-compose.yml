@@ -14,7 +14,20 @@ services:
     volumes:
       - ./backend_data:/app/data
     environment:
-      - GOOGLE_API_KEY="your_api_key_goes_here_without_brackets"
+      - LLM_PROVIDER=local
+      - LOCAL_LLM_URL=http://ollama:11434/v1
+      - LOCAL_LLM_MODEL=llama3.2
+    restart: unless-stopped
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: yesmarttutor-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
     restart: unless-stopped
 
   # Bonus Automation: Watchtower will automatically detect when GitHub Actions
