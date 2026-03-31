@@ -1,8 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./learning_app.db"
+# Ensure data directory exists (especially for local non-Docker development)
+os.makedirs("./data", exist_ok=True)
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./data/learning_app.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
