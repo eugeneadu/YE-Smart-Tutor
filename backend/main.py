@@ -137,7 +137,7 @@ def health_check():
 @app.post("/api/greet")
 def generate_greeting(request: GreetingRequest):
     # Fallback if no key
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"message": f"Hello {request.name}! Welcome to your learning hub! (AI Key missing)"}
 
     prompt = ""
@@ -159,7 +159,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 def chat_with_tutor(request: ChatRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"reply": "I'm sorry, I can't chat right now because my brain (API Key) is missing!"}
 
     prompt = f"""You are a friendly, encouraging tutor named "Professor Hoot" helping a Grade {request.student_grade} student.
@@ -204,7 +204,7 @@ class QuizRequest(BaseModel):
 
 @app.post("/api/lesson/plan")
 def generate_lesson_plan(request: LessonPlanRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"plan": ["Introduction to " + request.topic, "Key Concepts", "Examples", "Summary"]}
 
     prompt = f"""
@@ -225,7 +225,7 @@ def generate_lesson_plan(request: LessonPlanRequest):
 
 @app.post("/api/lesson/content")
 def generate_lesson_content(request: LessonContentRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"content": f"Simulation: Content for {request.subtopic} (Grade {request.grade})"}
 
     # Generate the text content
@@ -316,7 +316,7 @@ def generate_lesson_content(request: LessonContentRequest):
 
 @app.post("/api/quiz")
 def generate_quiz(request: QuizRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {
             "questions": [
                 {
@@ -385,7 +385,7 @@ class TwiTranslateRequest(BaseModel):
 
 @app.post("/api/twi/translate")
 def translate_to_twi(request: TwiTranslateRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {
             "translation": "Simulation: " + request.text,
             "pronunciation": "Sim-u-la-tion",
@@ -422,7 +422,7 @@ def translate_to_twi(request: TwiTranslateRequest):
 
 @app.post("/api/twi/vocab")
 def generate_twi_vocab(request: TwiRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"content": "Simulation: Twi vocab for " + request.topic}
 
     prompt = f"""
@@ -1053,7 +1053,7 @@ class FlashcardGenerateRequest(BaseModel):
 
 @app.post("/api/flashcards/generate")
 def generate_flashcards(request: FlashcardGenerateRequest):
-    if not api_key:
+    if not api_key and llm_provider != "local":
         return {"flashcards": []}
 
     prompt = f"""
