@@ -1,0 +1,35 @@
+services:
+  frontend:
+    image: ghcr.io/eugeneadu/yesmarttutor-frontend:latest
+    container_name: yesmarttutor-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    image: ghcr.io/eugeneadu/yesmarttutor-backend:latest
+    container_name: yesmarttutor-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend_data:/app/data
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-replace_this_with_your_key}
+    restart: unless-stopped
+
+  # Bonus Automation: Watchtower will automatically detect when GitHub Actions
+  # pushes a new image for the frontend/backend and restart them instantly!
+  watchtower:
+    image: containrrr/watchtower
+    container_name: yesmarttutor-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+    # Scope: This ensures watchtower only auto-updates the Smart Tutor containers,
+    # not every app on your entire Ugreen NAS!
+    command: yesmarttutor-frontend yesmarttutor-backend
+    restart: unless-stopped
