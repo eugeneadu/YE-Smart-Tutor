@@ -66,6 +66,11 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
                 body: JSON.stringify({ subject, topic, subtopic, grade })
             });
             const data = await res.json();
+            
+            if (!res.ok) {
+                 throw new Error(data.detail || 'Failed to connect to the Magic Tutor Server');
+            }
+            
             setCurrentContent(data.content);
             setCurrentImage(data.image_url || null);
             setMode('learning');
@@ -91,7 +96,7 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
             setModalConfig({
                 isOpen: true,
                 title: 'Oh no! 🔌',
-                content: 'Failed to generate the lesson. Please check your API key or server connection.',
+                content: error.message,
                 type: 'error',
                 onClose: () => {
                     setModalConfig(prev => ({ ...prev, isOpen: false }));

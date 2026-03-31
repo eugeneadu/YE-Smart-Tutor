@@ -241,38 +241,44 @@ def generate_lesson_content(request: LessonContentRequest):
     """
     
     try:
-        response = app_generate_content(content_prompt, model_name='gemini-2.0-flash')
-        content = response.text
+        try:
+            response = app_generate_content(content_prompt, model_name='gemini-2.0-flash')
+            content = response.text
+        except Exception as e:
+            error_str = str(e).lower()
+            if "429" in error_str or "quota" in error_str or "exhausted" in error_str:
+                raise HTTPException(status_code=429, detail="Professor Hoot needs a quick nap! You hit the free-tier quota. Wait 60 seconds and try again. 🦉💤")
+            raise e
         
         # Decide if an image would be helpful
-        image_decision_prompt = f"""
-        Topic: {request.subtopic}
-        Subject: {request.subject}
-        Grade: {request.grade}
-        
-        Would a visual diagram, illustration, or educational image significantly help a Grade {request.grade} student understand "{request.subtopic}"?
-        Consider: diagrams for processes, scientific concepts, historical events, geography, anatomy, chemistry, physics, etc.
-        
-        Respond with JSON:
-        {{
-            "needs_image": true/false,
-            "image_prompt": "A detailed prompt for generating an educational illustration" (only if needs_image is true)
-        }}
-        """
-        
-        image_decision = app_generate_content(
-            image_decision_prompt,
-            model_name='gemini-2.0-flash',
-            response_mime_type='application/json'
-        )
-        
+        decision_data = {}
         try:
+            image_decision_prompt = f"""
+            Topic: {request.subtopic}
+            Subject: {request.subject}
+            Grade: {request.grade}
+            
+            Would a visual diagram, illustration, or educational image significantly help a Grade {request.grade} student understand "{request.subtopic}"?
+            Consider: diagrams for processes, scientific concepts, historical events, geography, anatomy, chemistry, physics, etc.
+            
+            Respond with JSON:
+            {{
+                "needs_image": true/false,
+                "image_prompt": "A detailed prompt for generating an educational illustration" (only if needs_image is true)
+            }}
+            """
+            
+            image_decision = app_generate_content(
+                image_decision_prompt,
+                model_name='gemini-2.0-flash',
+                response_mime_type='application/json'
+            )
+            
             decision_data = json.loads(image_decision.text)
-            # Handle if response is a list (take first element) or dict
             if isinstance(decision_data, list):
                 decision_data = decision_data[0] if decision_data else {}
-        except:
-            decision_data = {}
+        except Exception as img_dec_error:
+            print(f"Safe ignoring image decision error to salvage lesson text: {img_dec_error}")
             
         image_url = None
         
