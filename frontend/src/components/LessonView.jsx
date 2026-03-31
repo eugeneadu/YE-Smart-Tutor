@@ -88,6 +88,16 @@ const LessonView = ({ subject, defaultGrade, studentProfile, initialTopic = '', 
             }
         } catch (error) {
             console.error("Error fetching content:", error);
+            setModalConfig({
+                isOpen: true,
+                title: 'Oh no! 🔌',
+                content: 'Failed to generate the lesson. Please check your API key or server connection.',
+                type: 'error',
+                onClose: () => {
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    setMode('plan');
+                }
+            });
         } finally {
             setLoading(false);
         }
