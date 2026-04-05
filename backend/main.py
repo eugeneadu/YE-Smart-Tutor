@@ -10,6 +10,7 @@ from elevenlabs.client import ElevenLabs
 from google.genai import types
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 import models
 from database import SessionLocal, engine
 
@@ -19,8 +20,8 @@ models.Base.metadata.create_all(bind=engine)
 
 # Graceful DB Migration to add PIN column
 try:
-    with engine.connect() as conn:
-        conn.execute("ALTER TABLE students ADD COLUMN pin VARCHAR(6)")
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE students ADD COLUMN pin VARCHAR(6)"))
 except Exception as e:
     pass # Column likely already exists
 
