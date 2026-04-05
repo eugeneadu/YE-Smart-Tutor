@@ -7,6 +7,7 @@ const AdminDashboard = ({ onBack }) => {
 
     const [newStudentName, setNewStudentName] = useState('');
     const [newStudentGrade, setNewStudentGrade] = useState(1);
+    const [newStudentPin, setNewStudentPin] = useState('');
 
     const handleAddStudent = async () => {
         if (!newStudentName) return;
@@ -14,7 +15,12 @@ const AdminDashboard = ({ onBack }) => {
             await fetch('/api/students', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newStudentName, grade: newStudentGrade, avatar: '🎓' })
+                body: JSON.stringify({ 
+                    name: newStudentName, 
+                    grade: newStudentGrade, 
+                    avatar: '🎓',
+                    pin: newStudentPin
+                })
             });
             // Refresh list
             const res = await fetch('/api/students');
@@ -22,6 +28,7 @@ const AdminDashboard = ({ onBack }) => {
             setStudents(data);
             setNewStudentName('');
             setNewStudentGrade(1);
+            setNewStudentPin('');
         } catch (err) {
             console.error("Error adding student:", err);
         }
@@ -139,7 +146,8 @@ const AdminDashboard = ({ onBack }) => {
                     name: editingStudent.name,
                     grade: editingStudent.grade,
                     avatar: editingStudent.avatar,
-                    is_public: editingStudent.is_public_profile
+                    is_public: editingStudent.is_public_profile,
+                    pin: editingStudent.pin
                 })
             });
 
@@ -218,6 +226,17 @@ const AdminDashboard = ({ onBack }) => {
                             ))}
                         </select>
                     </div>
+                    <div className="w-32">
+                        <label className="block text-sm text-gray-600 mb-1">6-Digit PIN</label>
+                        <input
+                            type="text"
+                            maxLength="6"
+                            placeholder="Optional"
+                            value={newStudentPin}
+                            onChange={(e) => setNewStudentPin(e.target.value.replace(/[^0-9]/g, ''))}
+                            className="w-full p-3 border rounded-lg"
+                        />
+                    </div>
                     <button
                         onClick={handleAddStudent}
                         className="px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
@@ -281,7 +300,10 @@ const AdminDashboard = ({ onBack }) => {
                                 <tr key={student.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                                     <td className="py-4 flex items-center gap-3">
                                         <span className="text-2xl">{student.avatar}</span>
-                                        <span className="font-bold text-gray-700">{student.name}</span>
+                                        <span className="font-bold text-gray-700">
+                                            {student.name}
+                                            {student.has_pin && <span className="ml-2" title="Profile Locked">🔒</span>}
+                                        </span>
                                     </td>
                                     <td className="py-4">
                                         <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-bold">
@@ -406,6 +428,19 @@ const AdminDashboard = ({ onBack }) => {
                                     Show on Public Leaderboard 🏆
                                 </label>
                             </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100">
+                            <label className="block text-sm text-gray-600 mb-1">Set 6-Digit PIN (Optional)</label>
+                            <input
+                                type="text"
+                                maxLength="6"
+                                placeholder="Leave blank to remove PIN"
+                                value={editingStudent.pin || ''}
+                                onChange={(e) => setEditingStudent({ ...editingStudent, pin: e.target.value.replace(/[^0-9]/g, '') })}
+                                className="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 font-mono"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">If set, the profile will require this PIN to access.</p>
                         </div>
 
                         <div className="flex gap-4">

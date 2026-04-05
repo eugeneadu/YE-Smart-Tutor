@@ -3,6 +3,12 @@ import React, { useState } from 'react';
 
 const ProfileSelection = ({ onSelectProfile }) => {
     const [profiles, setProfiles] = useState([]);
+    
+    // PIN Lock States
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [selectedLockedProfile, setSelectedLockedProfile] = useState(null);
+    const [enteredPin, setEnteredPin] = useState('');
+    const [pinError, setPinError] = useState(false);
 
     React.useEffect(() => {
         const fetchStudents = async () => {
@@ -28,7 +34,7 @@ const ProfileSelection = ({ onSelectProfile }) => {
         fetchStudents();
     }, []);
 
-    const handleSelect = async (profile) => {
+    const finalizeLogin = async (profile) => {
         try {
             const res = await fetch('/api/students', {
                 method: 'POST',
@@ -40,6 +46,41 @@ const ProfileSelection = ({ onSelectProfile }) => {
         } catch (err) {
             console.error("Error fetching student:", err);
             onSelectProfile(profile);
+        }
+    };
+
+    const handleSelect = (profile) => {
+        if (profile.has_pin) {
+            setSelectedLockedProfile(profile);
+            setShowPinModal(true);
+            setEnteredPin('');
+            setPinError(false);
+        } else {
+            finalizeLogin(profile);
+        }
+    };
+
+    const handleVerifyPin = async () => {
+        if (!enteredPin || !selectedLockedProfile) return;
+        
+        try {
+            const res = await fetch(`/api/students/${selectedLockedProfile.id}/verify-pin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: enteredPin })
+            });
+            const data = await res.json();
+            
+            if (data.valid) {
+                setShowPinModal(false);
+                finalizeLogin(selectedLockedProfile);
+            } else {
+                setPinError(true);
+                setEnteredPin('');
+            }
+        } catch (err) {
+            console.error("Error verifying student PIN:", err);
+            setPinError(true);
         }
     };
 
@@ -74,8 +115,9 @@ const ProfileSelection = ({ onSelectProfile }) => {
                                 {getAvatarImg(profile.name, profile.avatar)}
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-pink-400 transition-all">
+                            <h3 className="text-3xl font-bold text-slate-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-pink-400 transition-all flex items-center justify-center">
                                 {profile.name}
+                                {profile.has_pin && <span className="ml-3 text-2xl" title="Locked Profile">🔒</span>}
                             </h3>
                             <div className="mt-2 text-sm font-medium text-slate-400 uppercase tracking-widest bg-slate-800/50 px-4 py-1 rounded-full border border-slate-700">
                                 Grade {profile.grade}
@@ -84,6 +126,52 @@ const ProfileSelection = ({ onSelectProfile }) => {
                     ))}
                 </div>
             </div>
+
+            {/* Secret Code Modal */}
+            {showPinModal && (
+                <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="glass-panel p-8 rounded-3xl w-full max-w-sm text-center relative border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+                        <div className="text-5xl mb-4">🔐</div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Secret Code Required</h2>
+                        <p className="text-indigo-200 mb-6">Ask {selectedLockedProfile?.name} for their 6-digit PIN!</p>
+                        
+                        <input
+                            type="password"
+                            autoFocus
+                            maxLength="6"
+                            value={enteredPin}
+                            onChange={(e) => {
+                                setEnteredPin(e.target.value.replace(/[^0-9]/g, ''));
+                                setPinError(false);
+                            }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleVerifyPin()}
+                            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-center text-3xl tracking-widest text-white shadow-inner focus:outline-none focus:border-indigo-500 mb-4 font-mono"
+                            placeholder="••••••"
+                        />
+                        
+                        {pinError && (
+                            <div className="text-rose-400 mb-4 animate-shake text-sm font-medium">
+                                Incorrect Secret Code! Try again.
+                            </div>
+                        )}
+                        
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowPinModal(false)}
+                                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleVerifyPin}
+                                className="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/50"
+                            >
+                                Unlock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

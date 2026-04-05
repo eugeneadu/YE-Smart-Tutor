@@ -13,6 +13,11 @@ class Student(Base):
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     is_public_profile = Column(Boolean, default=False)
+    pin = Column(String(6), nullable=True)
+    
+    @property
+    def has_pin(self):
+        return bool(self.pin)
 
 class Flashcard(Base):
     __tablename__ = "flashcards"

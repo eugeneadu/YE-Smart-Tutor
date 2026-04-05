@@ -17,6 +17,13 @@ load_dotenv()
 
 models.Base.metadata.create_all(bind=engine)
 
+# Graceful DB Migration to add PIN column
+try:
+    with engine.connect() as conn:
+        conn.execute("ALTER TABLE students ADD COLUMN pin VARCHAR(6)")
+except Exception as e:
+    pass # Column likely already exists
+
 app = FastAPI(title="Y&E Smart Tutor API")
 
 app.add_middleware(
@@ -461,6 +468,7 @@ class StudentCreate(BaseModel):
     name: str
     grade: int
     avatar: str = "🎓"
+    pin: str | None = None
 
 class XPUpdate(BaseModel):
     student_id: int
@@ -468,13 +476,24 @@ class XPUpdate(BaseModel):
 
 @app.get("/api/students")
 def get_students(db: Session = Depends(get_db)):
-    return db.query(models.Student).all()
+    students = db.query(models.Student).all()
+    # Mask pure pins but expose flag
+    return [{
+        "id": s.id, "name": s.name, "grade": s.grade, "avatar": s.avatar,
+        "xp": s.xp, "level": s.level, "is_public_profile": s.is_public_profile,
+        "has_pin": s.has_pin
+    } for s in students]
 
 @app.post("/api/students")
 def get_or_create_student(student: StudentCreate, db: Session = Depends(get_db)):
     db_student = db.query(models.Student).filter(models.Student.name == student.name).first()
     if not db_student:
-        db_student = models.Student(name=student.name, grade=student.grade, avatar=student.avatar)
+        db_student = models.Student(
+            name=student.name, 
+            grade=student.grade, 
+            avatar=student.avatar,
+            pin=student.pin if student.pin and student.pin.strip() else None
+        )
         db.add(db_student)
         db.commit()
         db.refresh(db_student)
@@ -485,6 +504,10 @@ class StudentUpdate(BaseModel):
     grade: int
     avatar: str
     is_public: bool = False
+    pin: str | None = None
+
+class StudentVerifyPIN(BaseModel):
+    pin: str
 
 @app.put("/api/students/{student_id}")
 def update_student(student_id: int, student: StudentUpdate, db: Session = Depends(get_db)):
@@ -497,9 +520,33 @@ def update_student(student_id: int, student: StudentUpdate, db: Session = Depend
     db_student.avatar = student.avatar
     db_student.is_public_profile = student.is_public
     
+    if student.pin is not None:
+        db_student.pin = student.pin if student.pin.strip() else None
+        
     db.commit()
     db.refresh(db_student)
-    return db_student
+    
+    # Return mapped dict
+    return {
+        "id": db_student.id, "name": db_student.name, "grade": db_student.grade, 
+        "avatar": db_student.avatar, "xp": db_student.xp, "level": db_student.level, 
+        "is_public_profile": db_student.is_public_profile, "has_pin": db_student.has_pin
+    }
+
+@app.post("/api/students/{student_id}/verify-pin")
+def verify_student_pin(student_id: int, request: StudentVerifyPIN, db: Session = Depends(get_db)):
+    db_student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if not db_student:
+        raise HTTPException(status_code=404, detail="Student not found")
+        
+    # If no pin is set, functionally valid
+    if not db_student.pin:
+        return {"valid": True}
+        
+    if db_student.pin == request.pin:
+        return {"valid": True}
+        
+    return {"valid": False}
 
 @app.delete("/api/students/{student_id}")
 def delete_student(student_id: int, db: Session = Depends(get_db)):
