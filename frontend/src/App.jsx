@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 import ProfileSelection from './components/ProfileSelection'
 import SubjectDashboard from './components/SubjectDashboard'
 import LessonView from './components/LessonView'
@@ -191,6 +192,7 @@ function App() {
   if (!currentProfile) {
     return (
       <>
+        <PWAInstallPrompt />
         <ProfileSelection onSelectProfile={handleProfileSelect} />
         <div className="fixed bottom-4 right-4">
           <button
@@ -292,6 +294,7 @@ function App() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
+      <PWAInstallPrompt />
       <header className="glass-header rounded-3xl p-4 md:px-8 flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-slate-700/50">
         <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 cursor-pointer hover:scale-105 transition-transform" onClick={handleBackToDashboard}>
           Y&E Smart Tutor
