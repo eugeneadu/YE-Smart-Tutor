@@ -47,12 +47,13 @@ llm_provider = os.getenv("LLM_PROVIDER", "gemini") # 'gemini' or 'local'
 local_llm_url = os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1")
 local_client = None
 local_model = os.getenv("LOCAL_LLM_MODEL", "llama3")
+ollama_api_key = os.getenv("OLLAMA_API_KEY", "ollama")  # real key for cloud, dummy for local
 
 if llm_provider == "local":
     print(f"Using Local LLM Provider at {local_llm_url} with model {local_model}")
     local_client = OpenAI(
         base_url=local_llm_url,
-        api_key="ollama", # required for compatibility but ignored
+        api_key=ollama_api_key,  # used as Bearer token for Ollama Cloud API
     )
 
 def app_generate_content(prompt, model_name=None, response_mime_type=None):
